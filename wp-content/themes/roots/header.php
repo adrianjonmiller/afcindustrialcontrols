@@ -25,6 +25,18 @@
   		max-height: 300px;
   		height: expression(this.height > 300 ? "300px" : true);
   	}
+	.image-table tbody tr {
+		width: 100%;
+	}
+	.image-table tbody tr td {
+		width: 33.3333%;
+		float: left;
+	}
+	.image-table tbody tr td img {
+		width: 100%;
+	}
+	
+
   </style>
 
   <link rel="alternate" type="application/rss+xml" title="<?php bloginfo('name'); ?> Feed" href="<?php echo home_url(); ?>/feed/">
