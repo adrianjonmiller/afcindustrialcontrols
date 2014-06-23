@@ -1,5 +1,8 @@
 .htaccess
+<<<<<<< HEAD
 wp-config.php
+=======
+>>>>>>> 9c24b722f7e569fadb838d8458d90269bb906289
 wp-content/uploads/
 wp-content/blogs.dir/
 wp-content/upgrade/
@@ -11,3 +14,7 @@ sitemap.xml
 wp-content/cache/
 wp-content/backups/
 sitemap.xml.gz
+<<<<<<< HEAD
+=======
+wp-config.php
+>>>>>>> 9c24b722f7e569fadb838d8458d90269bb906289
