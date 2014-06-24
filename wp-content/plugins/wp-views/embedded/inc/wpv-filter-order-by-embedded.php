@@ -1,16 +1,61 @@
 <?php
 
-add_filter('wpv_view_settings', 'wpv_order_by_default_settings', 10, 2);
-function wpv_order_by_default_settings($view_settings) {
+add_filter( 'wpv_view_settings', 'wpv_order_by_default_settings' );
+add_filter( 'wpv_view_settings', 'wpv_taxonomy_order_by_default_settings' );
+add_filter( 'wpv_view_settings', 'wpv_users_order_by_default_settings' );
 
-    if (!isset($view_settings['orderby'])) {
-        $view_settings['orderby'] = 'post_date';
-    }
-    if (!isset($view_settings['order'])) {
-        $view_settings['order'] = 'DESC';
-    }
-    
-    return $view_settings;
+/**
+* wpv_order_by_default_settings
+*
+* Sets the default sorting settings for Views listing posts
+*
+* @since unknown
+*/
+
+function wpv_order_by_default_settings( $view_settings ) {
+	if (!isset($view_settings['orderby'])) {
+		$view_settings['orderby'] = 'post_date';
+	}
+	if (!isset($view_settings['order'])) {
+		$view_settings['order'] = 'DESC';
+	}
+	return $view_settings;
+}
+
+/**
+* wpv_taxonomy_order_by_default_settings
+*
+* Sets the default sorting settings for Views listing taxonomy terms
+*
+* @since unknown
+*/
+
+function wpv_taxonomy_order_by_default_settings( $view_settings ) {
+	if ( !isset( $view_settings['taxonomy_orderby'] ) ) {
+		$view_settings['taxonomy_orderby'] = 'name';
+	}
+	if ( !isset( $view_settings['taxonomy_order'] ) ) {
+		$view_settings['taxonomy_order'] = 'DESC';
+	}
+	return $view_settings;
+}
+
+/**
+* wpv_users_order_by_default_settings
+*
+* Sets the default sorting settings for Views listing users
+*
+* @since unknown
+*/
+
+function wpv_users_order_by_default_settings( $view_settings ) {
+	if ( !isset( $view_settings['users_orderby'] ) ) {
+		$view_settings['users_orderby'] = 'user_login';
+	}
+	if ( !isset( $view_settings['users_order'] ) ) {
+		$view_settings['users_order'] = 'DESC';
+	}
+	return $view_settings;
 }
 
 $orderby_meta = '';
@@ -32,9 +77,9 @@ function wpv_filter_get_order_arg($query, $view_settings) {
         $orderby_set = true;
         
         // Fix for numeric custom field , need to user meta_value_num
-        if (_wpv_is_numeric_field($view_settings['orderby'])) {
+        if (_wpv_is_numeric_field($view_settings['orderby']) || _wpv_is_numeric_field('field-wpcf-' . $query['meta_key'])) { // This OR will ensure that numeric fields created outside Types but under Types control can sort properly
             $orderby= 'meta_value_num';
-        }        
+        }
     }
     $query['orderby'] = $orderby;
     
@@ -49,6 +94,9 @@ function wpv_filter_get_order_arg($query, $view_settings) {
         if (strpos($field, 'post-field') === 0) {
             $query['meta_key'] = substr($field, 11);
             $query['orderby'] = 'meta_value';
+            if (_wpv_is_numeric_field('field-wpcf-' . $query['meta_key'])) {// This will ensure that numeric fields created outside Types but under Types control can sort properly
+                $query['orderby'] = 'meta_value_num';
+            }
         } elseif (strpos($field, 'types-field') === 0) {
             $query['meta_key'] = strtolower(substr($field, 12));
             if (function_exists('wpcf_types_get_meta_prefix')) {
@@ -73,6 +121,12 @@ function wpv_filter_get_order_arg($query, $view_settings) {
     }
     if ($query['orderby'] == 'post_body') {
         $query['orderby'] = 'post_content';
+    }
+    if ( $query['orderby'] == 'post_slug' ) {
+        $query['orderby'] = 'name';
+    }
+    if ( $query['orderby'] == 'post_id' ) {
+        $query['orderby'] = 'ID';
     }
 
     if (strpos($query['orderby'], 'post_') === 0) {

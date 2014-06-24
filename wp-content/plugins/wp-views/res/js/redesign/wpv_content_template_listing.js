@@ -68,8 +68,11 @@ jQuery(function($) {
 
 	$('#posts-filter').submit(function(e) {
 		e.preventDefault();
-		navigateWithURIParams(decodeURIParams($(this).serialize()));
-
+		var url_params = decodeURIParams($(this).serialize());
+		if (typeof(url_params['search']) !== 'undefined' && url_params['search'] == '') {
+			url_params['search'] = null;
+		}
+		navigateWithURIParams(url_params);
 		return false;
 	});
 
@@ -77,13 +80,7 @@ jQuery(function($) {
 		e.preventDefault();
 		var spinnerContainer = $('<div class="spinner ajax-loader">').insertBefore($(this)).show();
 		$(this).prop('disabled', true).addClass('button-secondary').removeClass('button-primary');
-		var url_params = decodeURIParams(),
-		   url_page = null;
-		if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
-			if ( $('.js-wpv-ct-list-row').length == 1) {
-				url_page = 'paged=' + ( url_params['paged'] - 1 );
-			}
-		}
+		
 		var data = {
 			action: 'wpv_delete_ct',
 			wpnonce : $('#work_view_template').attr('value'),
@@ -98,7 +95,14 @@ jQuery(function($) {
 			data:data,
 			success:function(response){
 				if ( (typeof(response) !== 'undefined') && (response == data_ct_id)) {
-					navigateWithURIParams(decodeURIParams(url_page));
+					var url_params = decodeURIParams();
+					if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+						if ( $('.js-wpv-ct-list-row').length == 1) {
+							url_params['paged'] = ( url_params['paged'] - 1 );
+						}
+					}
+					url_params['deleted'] = 1;
+					navigateWithURIParams(url_params);
 				} else {
 					console.log( "Error: AJAX returned ", response );
 				}
@@ -155,15 +159,16 @@ jQuery(function($) {
 
 	$(document).on('change','.js-list-ct-action', function(e) {
 		data_ct_id = $(this).attr('data-ct-id'); // set global data_ct_id
+		view_listing_action_nonce = $(this).data('viewactionnonce');
 
 		// Delete content template
 		if( $(this).val() === 'delete' ) {
-
+			var postcount = $(this).data('postcount');
 			$.colorbox({
 				href: '.js-remove-content-template-dialog',
 				inline: true,
 				onComplete: function() {
-
+					$('.js-ct-single-postcount').html(postcount);
 				}
 			});
 		}
@@ -214,49 +219,137 @@ jQuery(function($) {
                  }
              });
          }
+		
+		// If action is trash, move to trash and reload the page
+		
+		else if ( $(this).val() === 'trash' ) {
+			$(this).parents('.js-wpv-ct-list-row').find('h3').append(' <div class="spinner ajax-loader"></div>');
+			$('.subsubsub').append('<div class="spinner ajax-loader"></div>');
+			var data = {
+				action: 'wpv_view_change_status',
+				id: data_ct_id,
+				newstatus: 'trash',
+				wpnonce : view_listing_action_nonce
+			};
+			$.ajax({
+				async:false,
+				type:"POST",
+				url:ajaxurl,
+				data:data,
+				success:function(response){
+					if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+						var url_params = decodeURIParams();
+						if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+							if ( $('.js-wpv-ct-list-row').length == 1) {
+								url_params['paged'] = ( url_params['paged'] - 1 );
+							}
+						}
+						url_params['trashed'] = response;
+						navigateWithURIParams(url_params);
+					} else {
+						console.log( "Error: AJAX returned ", response );
+					}
+				},
+				error: function (ajaxContext) {
+					console.log( "Error: ", ajaxContext.responseText );
+				},
+				complete: function() {
+					
+				}
+			});
+			
+		}
+		
+		else if ( $(this).val() === 'restore-from-trash' ) {
+			$(this).parents('.js-wpv-ct-list-row').find('h3').append(' <div class="spinner ajax-loader"></div>');
+			$('.subsubsub').append('<div class="spinner ajax-loader"></div>');
+			var data = {
+				action: 'wpv_view_change_status',
+				id: data_ct_id,
+				newstatus: 'publish',
+				wpnonce : view_listing_action_nonce
+			};
+			$.ajax({
+				async:false,
+				type:"POST",
+				url:ajaxurl,
+				data:data,
+				success:function(response){
+					if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+						var url_params = decodeURIParams();
+						if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+							if ( $('.js-wpv-ct-list-row').length == 1) {
+								url_params['paged'] = ( url_params['paged'] - 1 );
+							}
+						}
+						url_params['untrashed'] = 1;
+						navigateWithURIParams(url_params);
+					} else {
+						console.log( "Error: AJAX returned ", response );
+					}
+				},
+				error: function (ajaxContext) {
+					console.log( "Error: ", ajaxContext.responseText );
+				},
+				complete: function() {
+					
+				}
+			});
+			
+		}
+		
+		// Reset the actions dropdown
+		
 		$('.js-list-ct-action option:selected').removeAttr('selected');
+		$('#list_ct_action_'+data_ct_id).val($('#list_ct_action_'+data_ct_id+' option:first').val());
 	});
-
-	//reload pagination TODO maybe deprecated
-	function reload_pages(query,activePage){
-	  activePage = (typeof activePage == 'undefined')?1:activePage;
-	  var sorting = $('.views-list-sort-active').data('orderby');
-
-	  	var data = {
-	        action : 'ct_reload_pages',
-	        sort : 'name',
-	        query : query,
-	        page : WpvPagination.ajaxData.page,
-			orderby : sorting,
-	        wpnonce : $('#work_view_template').attr('value')
-	    };
-
-	    $.post(ajaxurl, data, function(response) {
-
-	    		$('.wpv-listing-pagination')
-	    			.empty()
-	    			.append(response);
-	            WpvPagination.ajaxData = { // set data object for AJAX request
-					action: 'ct_change_view',
-					view: 'name',
-					query : query,
-					orderby : sorting,
-					wpnonce : $('#work_view_template').attr('value')
-	            };
-	            WpvPagination.totalPages = $('.js-wpv-listing-pagination-nav').length - 2;
-	            WpvPagination.setActivePage(activePage);
-	    });
-    }
+	
+	// Untrash action
+	
+	$(document).on('click', '.js-wpv-untrash', function(e){
+		e.preventDefault();
+		var spinnerContainer = $('<div class="spinner ajax-loader">').insertAfter($(this)).show();
+		var data = {
+			action: 'wpv_view_change_status',
+			id: $(this).data('id'),
+			newstatus: 'publish',
+			wpnonce : $(this).data('nonce')
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					url_params['untrashed'] = 1;
+					navigateWithURIParams(url_params);
+				} else {
+					spinnerContainer.remove();
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				spinnerContainer.remove();
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+	});
 
 
     //Proccess Post type/Taxonomy assign to template
     $(document).on('click','.js-ct-change-types-pt-process', function(e){
      	e.preventDefault();
+	var $spinnerContainer = $('<div class="spinner ajax-loader">').insertAfter($(this)).show();
 	    var $thiz = $(this);
 	    var sort = $thiz.data('sort');
 	    var pt = $thiz.data('pt');
 	    var value = $('input[name=wpv-new-post-type-content-template]:checked').val();
-
+	$thiz.removeClass('button-primary').addClass('button-secondary').prop('disabled',true);
 	    var data = {
 	        action : 'ct_change_types_pt_process',
 	        sort : sort,
@@ -272,6 +365,69 @@ jQuery(function($) {
 	    });
 	    return false;
 	});
+    
+	//Unlink Content Template for existing single posts - popup
+    
+	$(document).on('click', '.js-single-unlink-template-open-dialog', function(e){
+		e.preventDefault();
+		var singletype = $(this).data('slug'),
+		       singlelabel = $(this).data('label'),
+		       singlenumber = $(this).data('unclear');
+		$.colorbox({
+			href: $('.js-single-unlink-template-dialog'),
+			inline : true,
+			onComplete: function() {
+				$('.js-single-unlink-label').each(function(){
+					$(this).html(singlelabel);
+				});
+				$('.js-single-unlink-number').each(function(){
+					$(this).html(singlenumber);
+				});
+				$('.js-single-unlink-template-ok').data('slug', singletype);
+			}
+		});
+		return false;
+		
+	});
+	
+	// Unlink Contnt Template for existing single posts - action
+	
+	$(document).on('click', '.js-single-unlink-template-ok', function(e){
+		e.preventDefault();
+		var spinnerContainer = $('<div class="spinner ajax-loader">').insertAfter($(this)).show(),
+		       singletype = $(this).data('slug'),
+		       nonce = $(this).data('nonce');
+		$(this).removeClass('button-primary').addClass('button-secondary').prop('disabled', true);
+		var data = {
+			action: 'wpv_single_unlink_template',
+			wpnonce: nonce,
+			slug: singletype
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == 'ok')) {
+					var url_params = decodeURIParams();
+					navigateWithURIParams(url_params);
+				} else {
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				spinnerContainer.remove();
+				$(this).addClass('button-primary').removeClass('button-secondary').prop('disabled', false);
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+		
+	});
+	
 
 	//Open popup create new content template
 	$(document).on('click','.js-add-new-content-template', function(e){
@@ -281,12 +437,13 @@ jQuery(function($) {
 		$.colorbox({
 			href: $thiz.data('target') +'&wpnonce='+$('#work_view_template').attr('value'),
 			inline : false,
+			reposition: true,
 			onComplete: function() {
 				 $spinnerContainer.remove();
 				 if ( !$thiz.data('disabled') ){
-		  			$('.js-create-new-temlate').prop('disabled', true).addClass('button-secondary').removeClass('button-primary');
+		  			$('.js-create-new-template').prop('disabled', true).addClass('button-secondary').removeClass('button-primary');
 				 }
-				$('.js-create-new-temlate').live("propertyChanged", function(event, args, val ){
+				$('.js-create-new-template').live("propertyChanged", function(event, args, val ){
 
 					if( args == 'disabled' && val == true )
 					{
@@ -319,10 +476,10 @@ jQuery(function($) {
 	$(document).on('input','.js-wpv-new-content-template-name', function(e){
 		$('.js-error-container .toolset-alert').remove();
 		if ($(this).val() === ""){
-		 $('.js-create-new-temlate').prop('disabled',true);
+		 $('.js-create-new-template').prop('disabled',true);
 		}
 		else{
-		 $('.js-create-new-temlate').prop('disabled',false);
+		 $('.js-create-new-template').prop('disabled',false);
 		}
 	});
 
@@ -345,20 +502,21 @@ jQuery(function($) {
 		e.preventDefault();
 		var $dropdownList = $(this).parent().next('.js-wpv-content-template-dropdown-list');
 		$dropdownList.toggle('fast',function(){
-		if ( $dropdownList.is(':hidden') ) {
-			$(this).prev('p').find('[class^="icon-"]')
-				.removeClass('icon-caret-up')
-				.addClass('icon-caret-down');
-		} else {
-			$(this).prev('p').find('[class^="icon-"]')
-				.removeClass('icon-caret-down')
-				.addClass('icon-caret-up');
-		}
+			if ( $dropdownList.is(':hidden') ) {
+				$(this).prev('p').find('[class^="icon-"]')
+					.removeClass('icon-caret-up')
+					.addClass('icon-caret-down');
+			} else {
+				$(this).prev('p').find('[class^="icon-"]')
+					.removeClass('icon-caret-down')
+					.addClass('icon-caret-up');
+			}
+			$.colorbox.resize();
 		});
 		return false;
 	});
 
-	$(document).on('click','.js-create-new-temlate', function(e) {
+	$(document).on('click','.js-create-new-template', function(e) {
 		e.preventDefault();
 		var $spinnerContainer = $('<div class="spinner ajax-loader">').insertAfter($(this)).show();
 		var name = $('#wpv-add-new-content-template-form').find('input[type=text]').val();
@@ -372,7 +530,7 @@ jQuery(function($) {
 			type : type,
 			title: title
 		};
-		$('.js-create-new-temlate').prop('disabled', true);
+		$('.js-create-new-template').prop('disabled', true);
 		$.post(ajaxurl, data, function(response) {
 			 response = $.parseJSON(response);
 			 console.log(response);
@@ -384,7 +542,7 @@ jQuery(function($) {
 						close: false,
 						type: ''
 				 	});
-				 	$('.js-create-new-temlate').prop('disabled', false);
+				 	$('.js-create-new-template').prop('disabled', false);
 					$spinnerContainer.remove();
 				 }
 				 else{
@@ -443,6 +601,9 @@ jQuery(function($) {
 				result[key] = true;
 			}
 		}
+		result['untrashed'] = null;
+		result['trashed'] = null;
+		result['deleted'] = null;
 		return result;
 	}
 
@@ -463,6 +624,4 @@ jQuery(function($) {
 		window.location.search = encodeURIParams($.extend(decodeURIParams(), newParams), true);
 	}
 
-
 });
-

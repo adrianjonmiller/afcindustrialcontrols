@@ -1,8 +1,9 @@
-// Layout display
+// Document ready
 
 jQuery(document).ready(function(){
 	wpv_filters_exist();
 	wpv_filters_colapse();
+	jQuery('.js-filters-insert-filter').removeClass('button-primary').addClass('button-secondary').prop('disabled', true);
 });
 
 function wpv_filters_colapse() { // hide edition by default
@@ -10,16 +11,18 @@ function wpv_filters_colapse() { // hide edition by default
 }
 
 function wpv_filters_exist() {
-	var empty = jQuery('.js-wpv-filter-add-filter').data('empty');
-	var nonempty = jQuery('.js-wpv-filter-add-filter').data('nonempty');
-	if (0 == jQuery('.js-filter-list').find('.js-filter-row').length) {
-		jQuery('.js-filter-list').hide();
+	var thiz_button = jQuery('.js-wpv-filter-add-filter'),
+	empty = thiz_button.data('empty'),
+	nonempty = thiz_button.data('nonempty'),
+	thiz_list = jQuery('.js-filter-list');
+	if (0 == thiz_list.find('.js-filter-row').length) {
+		thiz_list.hide();
 		jQuery('.js-no-filters').show();
-		jQuery('.js-wpv-filter-add-filter').val(empty);
+		thiz_button.val(empty);
 	} else {
 		jQuery('.js-no-filters').hide();
-		jQuery('.js-filter-list').show();
-		jQuery('.js-wpv-filter-add-filter').val(nonempty);
+		thiz_list.show();
+		thiz_button.val(nonempty);
 	}
 }
 
@@ -27,21 +30,23 @@ function wpv_filters_exist() {
 
 jQuery(document).on('click', '.js-wpv-filter-edit-open', function(e){ // open filters editor - common for all filters
 	e.preventDefault();
-	jQuery(this).attr('disabled', true).hide();
-	jQuery(this).parents('.js-filter-row').find('.js-wpv-filter-summary').hide();
-	jQuery(this).parents('.js-filter-row').find('.js-wpv-filter-edit').fadeIn('fast');
-	if ( jQuery(this).parents('.js-filter-row').hasClass('js-filter-row-multiple') ) {
-		jQuery(this).parents('.js-filter-row').find('.js-wpv-filter-edit-controls').hide();
+	var thiz = jQuery(this),
+	thiz_parentrow = thiz.parents('.js-filter-row');
+	thiz.attr('disabled', true).hide();
+	thiz_parentrow.find('.js-wpv-filter-summary').hide();
+	thiz_parentrow.find('.js-wpv-filter-edit').fadeIn('fast');
+	if ( thiz_parentrow.hasClass('js-filter-row-multiple') ) {
+		thiz_parentrow.find('.js-wpv-filter-edit-controls').hide();
 	}
 });
 
 function wpv_close_filter_row(row) { // general close filters editor - just aesthetic changes & no actions
-	jQuery(row).find('.js-wpv-filter-summary').fadeIn('fast');
-	jQuery(row).find('.js-wpv-filter-edit').hide();
-	jQuery(row).find('.js-wpv-filter-edit-controls');
-	jQuery(row).find('.js-wpv-filter-edit-open').attr('disabled', false).show();
-	if ( jQuery(row).hasClass('js-filter-row-multiple') ) {
-		jQuery(row).find('.js-wpv-filter-edit-controls').show();
+	var thiz_row = jQuery(row);
+	thiz_row.find('.js-wpv-filter-edit').hide();
+	thiz_row.find('.js-wpv-filter-summary').show();
+	thiz_row.find('.js-wpv-filter-edit-open').attr('disabled', false).show();
+	if ( thiz_row.hasClass('js-filter-row-multiple') ) {
+		thiz_row.find('.js-wpv-filter-edit-controls').show();
 	}
 //	jQuery('html,body').animate({scrollTop:jQuery('.js-wpv-settings-content-filter').offset().top-25}, 500);
 }
@@ -49,31 +54,35 @@ function wpv_close_filter_row(row) { // general close filters editor - just aest
 // General validation
 
 function wpv_validate_filter_inputs(row) {
-	var valid = true;
+	var valid = true,
+	thiz,
+	type,
+	input_valid;
 	jQuery(jQuery(row).find('.js-wpv-filter-validate').get().reverse()).each(function(){
-		jQuery(this).removeClass('filter-input-error');
-		var type = jQuery(this).data('type');
-		var input_valid = wpv_filter_validate_param(type, jQuery(this));
+		thiz = jQuery(this);
+		thiz.removeClass('filter-input-error');
+		type = thiz.data('type'),
+		input_valid = wpv_filter_validate_param(type, thiz);
 		if (input_valid == false ) {
-			jQuery(this).addClass('filter-input-error');
+			thiz.addClass('filter-input-error');
 			valid = false;
 		}
 	});
 	return valid;
 }
 
-var wpv_param_missing = jQuery('.js-wpv-param-missing').hide();
-var wpv_param_url_ilegal = jQuery('.js-wpv-param-url-ilegal').hide();
-var wpv_param_shortcode_ilegal = jQuery('.js-wpv-param-shortcode-ilegal').hide();
-var wpv_param_forbidden_wp = jQuery('.js-wpv-param-forbidden-wordpress').hide();
-var wpv_param_forbidden_ts = jQuery('.js-wpv-param-forbidden-toolset').hide();
-var wpv_param_forbidden_pt = jQuery('.js-wpv-param-forbidden-post-type').hide();
-var wpv_param_forbidden_tax = jQuery('.js-wpv-param-forbidden-taxonomy').hide();
-var wpv_filter_parent_type_not_hierarchical = jQuery('.js-wpv-filter-parent-type-not-hierarchical').hide();
-var wpv_filter_taxonomy_parent_changed = jQuery('.js-wpv-filter-taxonomy-parent-changed').hide();
-var wpv_filter_taxonomy_term_changed = jQuery('.js-wpv-filter-taxonomy-term-changed').hide();
-var wpv_url_pattern = /^[a-z0-9\-\_]+$/;
-var wpv_shortcode_pattern = /^[a-z0-9]+$/;
+var wpv_param_missing = jQuery('.js-wpv-param-missing').hide(),
+wpv_param_url_ilegal = jQuery('.js-wpv-param-url-ilegal').hide(),
+wpv_param_shortcode_ilegal = jQuery('.js-wpv-param-shortcode-ilegal').hide(),
+wpv_param_forbidden_wp = jQuery('.js-wpv-param-forbidden-wordpress').hide(),
+wpv_param_forbidden_ts = jQuery('.js-wpv-param-forbidden-toolset').hide(),
+wpv_param_forbidden_pt = jQuery('.js-wpv-param-forbidden-post-type').hide(),
+wpv_param_forbidden_tax = jQuery('.js-wpv-param-forbidden-taxonomy').hide(),
+wpv_filter_parent_type_not_hierarchical = jQuery('.js-wpv-filter-parent-type-not-hierarchical').hide(),
+wpv_filter_taxonomy_parent_changed = jQuery('.js-wpv-filter-taxonomy-parent-changed').hide(),
+wpv_filter_taxonomy_term_changed = jQuery('.js-wpv-filter-taxonomy-term-changed').hide(),
+wpv_url_pattern = /^[a-z0-9\-\_]+$/,
+wpv_shortcode_pattern = /^[a-z0-9]+$/;
 
 function wpv_filter_validate_param(type, selector, value) {
 	var input_valid = true,
@@ -133,10 +142,6 @@ function wpv_clear_validate_messages(row){
 
 // Add Filter popup
 
-jQuery(document).ready(function(){
-	jQuery('.js-filters-insert-filter').removeClass('button-primary').addClass('button-secondary').prop('disabled', true);
-});
-
 jQuery(document).on('change', '.js-filter-add-select', function(){
 	if (jQuery(this).val() != '-1') {
 		jQuery('.js-filters-insert-filter').addClass('button-primary').removeClass('button-secondary').prop('disabled', false);
@@ -168,7 +173,6 @@ function wpv_update_filters_select(nonce, openpopup){
 		} else {
 			console.log( "Error: AJAX returned ", response );
 		}
-
 	})
 	.fail(function(jqXHR, textStatus, errorThrown) {
 		console.log( "Error: ", textStatus, errorThrown );
@@ -178,17 +182,15 @@ function wpv_update_filters_select(nonce, openpopup){
 	});
 }
 
-function wpv_open_filters_popup(){
+function wpv_open_filters_popup() {
 	jQuery.colorbox({
 		inline: true,
-		 href:'.js-filter-add-filter-form-dialog',
-		 open: true,
-		onComplete:function()
-		{
+		href:'.js-filter-add-filter-form-dialog',
+		open: true,
+		onComplete: function() {
 			var group = jQuery(".js-filter-add-select").find("optgroup");
-			jQuery.each(group, function(i,v){			
-				if( jQuery(v).children().length === 0 )
-				{
+			jQuery.each( group, function( i, v ) {
+				if ( jQuery(v).children().length === 0 ) {
 					jQuery(this).remove();
 				}
 			});
@@ -201,13 +203,15 @@ jQuery(document).on('click', '.js-filters-cancel-filter', function(){
 });
 
 jQuery(document).on('click','.js-filters-insert-filter', function(){
-	var filter_type = jQuery('.js-filter-add-select').val();
-	var nonce = jQuery(this).data('nonce');
-	var data = {
+	var thiz = jQuery(this),
+	filter_type = jQuery('.js-filter-add-select').val(),
+	nonce = thiz.data('nonce'),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(thiz).show(),
+	data = {
 		action: 'wpv_filters_add_filter_row',
 		id: jQuery('.js-post_ID').val(),
-		    wpnonce: nonce,
-		    filter_type: filter_type
+		wpnonce: nonce,
+		filter_type: filter_type
 	};
 	jQuery.post(ajaxurl, data, function(response) {
 		if ( (typeof(response) !== 'undefined') ) {
@@ -253,7 +257,31 @@ jQuery(document).on('click','.js-filters-insert-filter', function(){
 				wpv_custom_field_initialize_compare();
 				wpv_custom_field_initialize_compare_mode();
 				wpv_custom_field_initialize_relationship();
-			} else {
+				
+			} else if (filter_type.substr(0, 14) == 'usermeta-field') {
+				
+				if (jQuery('.js-filter-list .js-filter-usermeta-field').length > 0) {
+					if (jQuery('.js-filter-list .js-filter-usermeta-field .js-filter-row-' + filter_type).length > 0) {
+						jQuery('.js-filter-list .js-filter-usermeta-field .js-filter-row-' + filter_type).remove();
+					}
+					var responseRow = jQuery('.js-filter-list .js-filter-usermeta-field-edit').prepend(response);
+					jQuery('.js-filter-list .js-filter-usermeta-field-edit').show();
+					jQuery('.js-filter-list .js-wpv-filter-usermeta-field-summary').hide();
+				} else {
+					var tax_dummy_row = jQuery('.js-filter-placeholder .js-filter-usermeta-field').clone();
+					jQuery('.js-filter-list').show().append(tax_dummy_row);
+					var responseRow = jQuery('.js-filter-list .js-filter-usermeta-field-edit').prepend(response);
+					jQuery('.js-filter-list .js-filter-usermeta-field-edit').show();
+					jQuery('.js-filter-list .js-wpv-filter-usermeta-field-summary').hide();
+				}
+				jQuery('.js-filter-list .js-filter-usermeta-field').find('.js-wpv-filter-edit-controls').hide();
+				var save_text = jQuery('.js-filter-list .js-filter-usermeta-field').find('.js-wpv-filter-edit-ok').data('save');
+				jQuery('.js-filter-list .js-filter-usermeta-field').find('.js-wpv-filter-edit-ok').val(save_text).addClass('button-primary').removeClass('button-secundary').addClass('js-wpv-section-unsaved');
+				wpv_usermeta_field_initialize_compare();
+				wpv_usermeta_field_initialize_compare_mode();
+				wpv_usermeta_field_initialize_relationship();
+				
+			}else {
 				jQuery('.js-filter-list .js-filter-row-' + filter_type).remove();
 				var responseRow = jQuery('.js-filter-list').append(response);
 				responseRow.find('.js-filter-row-' + filter_type + ' .js-wpv-filter-edit-open').attr('disabled', true).hide();
@@ -261,6 +289,7 @@ jQuery(document).on('click','.js-filters-insert-filter', function(){
 				responseRow.find('.js-filter-row-' + filter_type + ' .js-wpv-filter-summary').hide();
 				var save_text = responseRow.find('.js-filter-row-' + filter_type + ' .js-wpv-filter-edit-ok').data('save');
 				responseRow.find('.js-filter-row-' + filter_type + ' .js-wpv-filter-edit-ok').val(save_text).addClass('button-primary').removeClass('button-secundary').addClass('js-wpv-section-unsaved');
+				wpv_users_suggest();
 			}
 			setConfirmUnload(true);
 		//	jQuery('html,body').animate({scrollTop:jQuery('.js-filter-list').offset().top-25}, 500);
@@ -273,6 +302,7 @@ jQuery(document).on('click','.js-filters-insert-filter', function(){
 		console.log( "Error: ", textStatus, errorThrown );
 	})
 	.always(function() {
+		spinnerContainer.remove();
 		jQuery.colorbox.close();
 		jQuery('.js-filter-add-select').val('-1');
 		wpv_taxonomy_relationship();
@@ -283,13 +313,14 @@ jQuery(document).on('click','.js-filters-insert-filter', function(){
 // Remove filter
 
 jQuery(document).on('click', '.js-filter-row-simple .js-filter-remove', function(){
-	var data_view_id = jQuery('.js-post_ID').val();
-	var row = jQuery(this).parents('li.js-filter-row');
-	var filter = row.attr('id').substring(7);
-	var nonce = jQuery(this).data('nonce');
-	var action = 'wpv_filter_' + filter + '_delete';
-
-	var data = {
+	var thiz = jQuery(this),
+	data_view_id = jQuery('.js-post_ID').val(),
+	row = thiz.parents('li.js-filter-row'),
+	filter = row.attr('id').substring(7),
+	nonce = thiz.data('nonce'),
+	action = 'wpv_filter_' + filter + '_delete',
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(thiz).show(),
+	data = {
 		action: action,
 		id: data_view_id,
 		wpnonce: nonce,
@@ -305,6 +336,7 @@ jQuery(document).on('click', '.js-filter-row-simple .js-filter-remove', function
 				wpv_filters_exist();
 			});
 			jQuery('.js-filter-add-select').val('-1');
+			wpv_update_parametric_search_section();
 		} else {
 			console.log( "Error: AJAX returned ", response );
 		}
@@ -314,16 +346,18 @@ jQuery(document).on('click', '.js-filter-row-simple .js-filter-remove', function
 		console.log( "Error: ", textStatus, errorThrown );
 	})
 	.always(function() {
-
+		spinnerContainer.remove();
 	});
 });
 
 jQuery(document).on('click', '.js-wpv-filter-taxonomy-controls .js-filter-remove', function() {
-	var data_view_id = jQuery('.js-post_ID').val();
-	var row = jQuery(this).parents('.js-filter-row-multiple-element');
-	var taxonomy = row.data('taxonomy');
-	var nonce = jQuery(this).data('nonce');
-	var data = {
+	var thiz = jQuery(this),
+	data_view_id = jQuery('.js-post_ID').val(),
+	row = thiz.parents('.js-filter-row-multiple-element'),
+	taxonomy = row.data('taxonomy'),
+	nonce = thiz.data('nonce'),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(thiz).show(),
+	data = {
 		action: 'wpv_filter_taxonomy_delete',
 		id: data_view_id,
 		taxonomy: taxonomy,
@@ -343,6 +377,7 @@ jQuery(document).on('click', '.js-wpv-filter-taxonomy-controls .js-filter-remove
 				wpv_filters_exist();
 			});
 			jQuery('.js-filter-add-select').val('-1');
+			wpv_update_parametric_search_section();
 		} else {
 			console.log( "Error: AJAX returned ", response );
 		}
@@ -352,7 +387,7 @@ jQuery(document).on('click', '.js-wpv-filter-taxonomy-controls .js-filter-remove
 		console.log( "Error: ", textStatus, errorThrown );
 	})
 	.always(function() {
-
+		spinnerContainer.remove();
 	});
 });
 
@@ -364,7 +399,9 @@ jQuery(document).on('click', '.js-filter-taxonomy .js-filter-taxonomy-row-remove
 			open: true
 		});
 	} else {
+		var spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show();
 		wpv_remove_taxonomy_filters();
+		spinnerContainer.remove();
 	}
 });
 
@@ -409,6 +446,7 @@ function wpv_remove_taxonomy_filters() {
 			}
 		});
 	});
+	wpv_update_parametric_search_section();
 }
 
 jQuery(document).on('click', '.js-filter-taxonomy-edit-filter-row', function(e) {
@@ -418,18 +456,20 @@ jQuery(document).on('click', '.js-filter-taxonomy-edit-filter-row', function(e) 
 })
 
 jQuery(document).on('click', '.js-filters-taxonomy-delete-filter-row', function() {
-	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertBefore(jQuery(this)).show();
+	var spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show();
 	wpv_remove_taxonomy_filters();
 	spinnerContainer.remove();
 	jQuery('.js-filter-taxonomy .js-filter-taxonomy-row-remove').colorbox.close();
 });
 
 jQuery(document).on('click', '.js-wpv-filter-custom-field-controls .js-filter-remove', function() {
-	var data_view_id = jQuery('.js-post_ID').val();
-	var row = jQuery(this).parents('.js-filter-row-multiple-element');
-	var field = row.data('field');
-	var nonce = jQuery(this).data('nonce');
-	var data = {
+	var thiz = jQuery(this),
+	data_view_id = jQuery('.js-post_ID').val(),
+	row = thiz.parents('.js-filter-row-multiple-element'),
+	field = row.data('field'),
+	nonce = thiz.data('nonce'),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(thiz).show(),
+	data = {
 		action: 'wpv_filter_custom_field_delete',
 		id: data_view_id,
 		field: field,
@@ -449,6 +489,7 @@ jQuery(document).on('click', '.js-wpv-filter-custom-field-controls .js-filter-re
 				wpv_filters_exist();
 			});
 			jQuery('.js-filter-add-select').val('-1');
+			wpv_update_parametric_search_section();
 		} else {
 			console.log( "Error: AJAX returned ", response );
 		}
@@ -458,7 +499,7 @@ jQuery(document).on('click', '.js-wpv-filter-custom-field-controls .js-filter-re
 		console.log( "Error: ", textStatus, errorThrown );
 	})
 	.always(function() {
-
+		spinnerContainer.remove();
 	});
 });
 
@@ -466,13 +507,16 @@ jQuery(document).on('click', '.js-filter-custom-field .js-filter-custom-field-ro
 	if (jQuery(this).hasClass('js-multiple-items')) {
 		jQuery.colorbox({
 			inline: true,
-		  href:'.js-filter-custom-field-delete-filter-row-dialog',
-		  open: true
+			href:'.js-filter-custom-field-delete-filter-row-dialog',
+			open: true
 		});
 	} else {
+		var spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show();
 		wpv_remove_custom_field_filters();
+		spinnerContainer.remove();
 	}
 });
+
 
 function wpv_remove_custom_field_filters() {
 	jQuery('.js-filter-list .js-filter-custom-field').find('.js-wpv-filter-edit-ok').removeClass('js-wpv-section-unsaved');
@@ -515,6 +559,7 @@ function wpv_remove_custom_field_filters() {
 		     }
 		});
 	});
+	wpv_update_parametric_search_section();
 }
 
 jQuery(document).on('click', '.js-filter-custom-field-edit-filter-row', function(e) {
@@ -524,54 +569,189 @@ jQuery(document).on('click', '.js-filter-custom-field-edit-filter-row', function
 })
 
 jQuery(document).on('click', '.js-filters-custom-field-delete-filter-row', function() {
-	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertBefore(jQuery(this)).show();
+	var spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show();
 	wpv_remove_custom_field_filters();
 	spinnerContainer.remove();
 	jQuery('.js-filter-custom-field .js-filter-custom-field-row-remove').colorbox.close();
 });
 
 
-/*jQuery(function($){
- *
- / / *h*ide filter details (if any) by default
+jQuery(document).on('click', '.js-wpv-filter-usermeta-field-controls .js-filter-remove', function() {
+	var thiz = jQuery(this),
+	data_view_id = jQuery('.js-post_ID').val(),
+	row = thiz.parents('.js-filter-row-multiple-element'),
+	field = row.data('field'),
+	nonce = thiz.data('nonce'),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(thiz).show(),
+	data = {
+		action: 'wpv_filter_usermeta_field_delete',
+		id: data_view_id,
+		field: field,
+		wpnonce: nonce,
+	};
+	jQuery.post(ajaxurl, data, function(response) {
+		if ( (typeof(response) !== 'undefined') && (response === data.id) ) {
+			if ( !jQuery('.js-filter-list .js-filter-usermeta-field .js-filter-usermeta-field-row-remove').hasClass('js-multiple-items') ) {
+				jQuery('.js-filter-list .js-filter-usermeta-field').find('.js-wpv-filter-edit-ok').removeClass('js-wpv-section-unsaved');
+				if (jQuery('.js-wpv-section-unsaved').length < 1) {
+					setConfirmUnload(false);
+				}
+			}
+			jQuery(row).fadeOut(500, function(){
+				jQuery(this).remove();
+				wpv_usermeta_field_initialize_relationship();
+				wpv_filters_exist();
+			});
+			jQuery('.js-filter-add-select').val('-1');
+			wpv_update_parametric_search_section();
+		} else {
+			console.log( "Error: AJAX returned ", response );
+		}
 
- $('.wpv-filter-edit').hide();
+	})
+	.fail(function(jqXHR, textStatus, errorThrown) {
+		console.log( "Error: ", textStatus, errorThrown );
+	})
+	.always(function() {
+		spinnerContainer.remove();
+	});
+});
+jQuery(document).on('click', '.js-filter-usermeta-field .js-filter-usermeta-field-row-remove', function(e) {
+	if (jQuery(this).hasClass('js-multiple-items')) {
+		jQuery.colorbox({
+			inline: true,
+			href:'.js-filter-usermeta-field-delete-filter-row-dialog',
+			open: true
+		});
+	} else {
+		wpv_remove_usermeta_field_filters();
+	}
+});
+function wpv_remove_usermeta_field_filters() {
+	jQuery('.js-filter-list .js-filter-usermeta-field').find('.js-wpv-filter-edit-ok').removeClass('js-wpv-section-unsaved');
+	if (jQuery('.js-wpv-section-unsaved').length < 1) {
+		setConfirmUnload(false);
+	}
+	jQuery('.js-filter-list .js-filter-usermeta-field .js-filter-remove').each(function() {
+		var data_view_id = jQuery('.js-post_ID').val(),
+		row = jQuery(this).parents('.js-filter-row-multiple-element'),
+		field = row.data('field'),
+		nonce = jQuery(this).data('nonce');
+	//	console.log(row);
+		var data = {
+			action: 'wpv_filter_usermeta_field_delete',
+			id: data_view_id,
+			field: field,
+			wpnonce: nonce
+		};
+		jQuery.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				
+				if ( (typeof(response) !== 'undefined') && (response === data.id) ) {
+				     jQuery(row).fadeOut(500, function(){
+					     jQuery(this).remove();
+					     wpv_usermeta_field_initialize_relationship();
+					     wpv_filters_exist();
+				     });
+				     jQuery('.js-filter-add-select').val('-1');
+				} else {
+				     console.log( "Error: AJAX returned ", response );
+				}
+		     },
+		     error: function (ajaxContext) {
+			     console.log( "Error: ", ajaxContext.responseText );
+		     },
+		     complete: function() {
+			     
+		     }
+		});
+	});
+	wpv_update_parametric_search_section();
+}
 
- // hide multiple filters if empty
+jQuery(document).on('click', '.js-filter-usermeta-field-edit-filter-row', function(e) {
+	e.preventDefault();
+	jQuery('.js-filter-list .js-filter-usermeta-field .js-wpv-filter-edit-open').trigger('click');
+	jQuery('.js-filter-usermeta-field .js-filter-usermeta-field-row-remove').colorbox.close();
+})
 
- $('.wpv-filter-multiple').each(function(){
-	 if (0 == $(this).find('.wpv_edit_row').length) {
-		 $(this).hide();
-	 }
- });
+jQuery(document).on('click', '.js-filters-usermeta-field-delete-filter-row', function() {
+	var spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show();
+	wpv_remove_usermeta_field_filters();
+	spinnerContainer.remove();
+	jQuery('.js-filter-usermeta-field .js-filter-usermeta-field-row-remove').colorbox.close();
+});
 
- // hide filter list if there are no filters
+/*
+ * Parametric search and dependency
+ */
 
- if (0 == $('.js-filter-list').find('.js-filter-row').length) {
-	 $('.js-filter-list').hide();
-	 //	$('.js-no-filters').show();
- } else {
-	 $('.js-no-filters').hide();
- }
+jQuery(document).on('click', '.js-make-intersection-filters', function( e ) { // TODO finish this, for god sake
+	e.preventDefault();
+	var thiz = jQuery(this),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(thiz).show(),
+	data = {
+		action: 'wpv_filter_make_intersection_filters',
+		id: jQuery('.js-post_ID').val(),
+		nonce: thiz.data('nonce')
+	};
+	jQuery.post(ajaxurl, data, function(response) {
+		if ( (typeof(response) !== 'undefined') ) {
+			decoded_response = jQuery.parseJSON(response);
+			if ( decoded_response.success === data.id ) {
+				jQuery('.js-filter-list').html(decoded_response.wpv_filter_update_filters_list);
+				jQuery('.js-wpv-dps-settings').html(decoded_response.wpv_dps_settings_structure);
+				wpv_after_update_filters_list();
+			}
+		} else {
+			//if(  WPV_Parametric.debug ) console.log( WPV_Parametric.ajax_error, response );
+		}
+	})
+	.fail(function(jqXHR, textStatus, errorThrown) {
+		//if(  WPV_Parametric.debug ) console.log( WPV_Parametric.error_generic, textStatus, errorThrown );
+	})
+	.always(function() {
+		spinnerContainer.remove();
+	});
+});
 
- // open edit details on demand
+jQuery(document).on('change', '.js-wpv-dps-toggle-container', function() {
+	var toggle_target = jQuery(this).data('toggletarget'),
+	container = jQuery( '.' + toggle_target );
+	if ( jQuery(this).val() == 'enable' ) {
+		container.fadeIn('fast');
+	} else {
+		container.fadeOut('fast');
+	}
+});
 
- $('.js-wpv-edit-open').click(function(e){
-	 e.preventDefault();
-	 var where = $(this).data('filter');
-	 $('.'+ where + '-summary').hide();
-	 $('#'+ where).fadeIn('fast');
-	 $('#'+ where).prev('.edit-filter').addClass('hidden');
- });
+jQuery(document).on('change', '.js-wpv-dps-spinner', function() {
+	// Make sections data show or hide based on value
+	// First, filter by the $this that is checked!! IMPORTANT
+	var thiz = jQuery(this).filter(':checked'),
+	toggle_target = thiz.data('toggletarget'),
+	container = jQuery( '.' + toggle_target );
+	jQuery('.js-wpv-dps-spinner-extra').hide();
+	container.fadeIn('fast');
+});
 
- // close edit details
-
- $('.js-filter-list .js-wpv-filter-edit-cancel').click(function(e){
-	 e.preventDefault();
-	 var where = $(this).data('filter');
-	 $('.'+ where + '-summary').fadeIn('fast');
-	 $('#'+ where).hide();
-	 $('#'+ where).prev('.edit-filter').removeClass('hidden');
-	 $('html,body').animate({scrollTop:$('.js-wpv-settings-content-filter').offset().top-25}, 500);
- });
- });*/
+jQuery(document).on('click', '.js-wpv-dps-advanced-toggle', function(e) {
+	e.preventDefault();
+	var thiz = jQuery(this),
+	state = thiz.data('state'),
+	text = '';
+	if (state == 'closed') {
+		thiz.data('state','opened');
+		thiz.text(thiz.data('opened'));
+		jQuery('.js-wpv-dps-advanced').fadeIn('fast');
+	}
+	else if (state == 'opened') {
+		thiz.data('state','closed');
+		thiz.text(thiz.data('closed'));
+		jQuery('.js-wpv-dps-advanced').hide();
+	}
+});

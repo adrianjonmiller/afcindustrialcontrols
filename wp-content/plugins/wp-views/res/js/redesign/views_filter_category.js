@@ -114,6 +114,8 @@ jQuery(document).on('click', '.js-filter-list .js-wpv-filter-taxonomy-edit-ok', 
 							jQuery('.js-filter-list .js-wpv-filter-taxonomy-summary .updated').fadeOut('fast');
 						}, 2000);
 						wpv_close_filter_row('.js-filter-list .js-filter-taxonomy');
+						// Run a function to reload the DPS section
+						wpv_update_parametric_search_section();
 					} else {
 						console.log( "Error: WordPress AJAX returned " + response );
 					}

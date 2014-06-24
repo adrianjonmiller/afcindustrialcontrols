@@ -18,18 +18,24 @@ if(defined('WPV_VERSION')) {
 
 // THEME VERSION
 
-define('WPV_VERSION', '1.3.1');
+define('WPV_VERSION', '1.6.1');
 define('WPV_PATH', dirname(__FILE__));
 define('WPV_PATH_EMBEDDED', dirname(__FILE__));
-define('WPV_FOLDER', basename(WPV_PATH));
 
-// For module manager views support
-define('_VIEWS_MODULE_MANAGER_KEY_','views');
-define('_VIEW_TEMPLATES_MODULE_MANAGER_KEY_','view-templates');
+if (!defined('WPV_FOLDER')) {
+	define('WPV_FOLDER', basename(WPV_PATH));
+}
+
+// Module Manager integration
+require WPV_PATH_EMBEDDED . '/inc/wpv-module-manager.php';
 
 if(strpos(str_replace('\\', '/', WPV_PATH_EMBEDDED), str_replace('\\', '/', WP_PLUGIN_DIR)) !== false){
-	define('WPV_URL', plugins_url('embedded-views' , dirname(__FILE__)));
-	define('WPV_URL_EMBEDDED', plugins_url('embedded-views' , dirname(__FILE__)));
+	$wpv_url = plugins_url('embedded-views' , dirname(__FILE__));
+	if ( ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN ) || is_ssl() ) {
+		$wpv_url = str_replace( 'http://', 'https://', $wpv_url );
+	}
+	define('WPV_URL', $wpv_url);
+	define('WPV_URL_EMBEDDED', $wpv_url);
 } else {
 	define('WPV_URL', get_stylesheet_directory_uri() . '/' . WPV_FOLDER);
 	define('WPV_URL_EMBEDDED', WPV_URL);
@@ -42,9 +48,17 @@ if (!defined('EDITOR_ADDON_RELPATH')) {
 if ( !function_exists( 'wplogger' ) ) {
 	require_once(WPV_PATH_EMBEDDED) . '/common/wplogger.php';
 }
+
+if ( !function_exists( 'wpv_debuger' ) ) { 
+	require_once(WPV_PATH_EMBEDDED) . '/inc/wpv-query-debug.class.php';
+}
+
+require WPV_PATH_EMBEDDED . '/inc/functions-core-embedded.php';
+
 require_once WPV_PATH_EMBEDDED . '/common/wp-pointer.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes-in-shortcodes.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes-gui.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-layout-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-meta-html-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-embedded.php';
@@ -57,6 +71,8 @@ require WPV_PATH_EMBEDDED . '/inc/wpv-filter-post-types-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-search-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-status-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-author-embedded.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-users-embedded.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-filter-usermeta-field-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-id-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-parent-embedded.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-types-embedded.php';

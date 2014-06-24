@@ -38,6 +38,7 @@ function add_view_content($view_settings, $view_id) {
 						<li class="wpv-vicon-codemirror-button">
 							<?php wpv_add_v_icon_to_codemirror( 'wpv_content' ); ?>
 						</li>
+						<?php wpv_add_cred_to_codemirror('wpv_content', 'li'); ?>
 						<li>
 							<button class="button-secondary js-code-editor-toolbar-button js-wpv-media-manager" data-id="<?php echo $view_id;?>" data-content="wpv_content">
 								<i class="icon-picture"></i>

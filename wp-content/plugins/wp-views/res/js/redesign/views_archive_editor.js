@@ -41,6 +41,8 @@ jQuery(function($){
 		var $editor = $('.js-code-editor').filter(function() {
 			return $this.data('target') ===  $(this).data('name');
 		});
+		
+		$this.removeClass('code-editor-textarea-full code-editor-textarea-empty');
 
 		$editor.toggleClass('closed');
 
@@ -55,6 +57,11 @@ jQuery(function($){
 			else{
 				$('.js-wpv-'+ z_el +'-old-place').append($elem);
 				$editor.find('.js-code-editor-toolbar ul li.wpv-'+ z_el +'-button-moved').remove();
+				if ( wpv_extra_textarea_toggle_flag(z_el) ) {
+					$this.addClass('code-editor-textarea-full');
+				} else {
+					$this.addClass('code-editor-textarea-empty');
+				}
 			}
 		}
 
@@ -121,6 +128,75 @@ jQuery(function($){
 	}
 });
 
+function wpv_extra_textarea_toggle_flag(element) {
+	var full = false;
+	if ( element == 'layout-css-editor' ) {
+		full = ( codemirror_views_layout_css.getValue() != '' );
+	} else if ( element == 'layout-js-editor' ) {
+		full = ( codemirror_views_layout_js.getValue() != '' );
+	}
+	return full;
+}
+
+// Change status
+
+jQuery(document).on('click', '.js-wpv-change-view-status', function(e){
+	e.preventDefault();
+	var newstatus = jQuery(this).data('statusto'),
+		    spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show(),
+		    thiz = jQuery(this),
+		    update_message = jQuery(this).data('success'),
+		    error_message = jQuery(this).data('unsaved'),
+		    redirect_url = jQuery(this).data('redirect');
+		    thiz.prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
+		    if (newstatus == 'trash') {
+			    message_where = jQuery('.js-wpv-slug-container');
+		    } else {
+			    message_where = thiz.parent();
+		    }
+		    var data = {
+			    action: 'wpv_view_change_status',
+			    id: jQuery('.js-post_ID').val(),
+			    newstatus: newstatus,
+			    wpnonce : jQuery(this).data('nonce')
+		    };
+		    jQuery.ajax({
+			    async:false,
+		  type:"POST",
+		  url:ajaxurl,
+		  data:data,
+		  success:function(response){
+			  if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+				  if (newstatus == 'trash') {
+					  jQuery(location).attr('href',redirect_url);
+				  }
+			  } else {
+				  message_where.wpvToolsetMessage({
+					  text:error_message,
+				      type:'error',
+				      inline:true,
+				      stay:true
+				  });
+				  console.log( "Error: AJAX returned ", response );
+			  }
+		  },
+		  error: function (ajaxContext) {
+			  thiz.prop('disabled', false);
+			  spinnerContainer.remove();
+			  message_where.wpvToolsetMessage({
+				  text:error_message,
+				  type:'error',
+				  inline:true,
+				  stay:true
+			  });
+			  console.log( "Error: ", ajaxContext.responseText );
+		  },
+		  complete: function() {
+			  
+		  }
+		    });
+});
+
 /*
  * Screen options
  */
@@ -183,6 +259,11 @@ function wpv_show_hide_section_change(checkbox) {
 		}
 		if ('content' == section) {
 			codemirror_views_content.refresh();
+		}
+		if ('layout-extra' == section) {
+			codemirror_views_layout.refresh();
+			codemirror_views_layout_css.refresh();
+			codemirror_views_layout_js.refresh();
 		}
 		if ('pagination' == section) {
 			if ('checked' != jQuery('.js-wpv-show-hide-filter-extra').attr('checked')) {

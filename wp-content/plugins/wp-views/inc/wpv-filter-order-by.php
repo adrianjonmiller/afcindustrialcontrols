@@ -1,5 +1,8 @@
 <?php
 
+// DEPRECATED
+// Only used in the old wpv-filter-types.php file
+
 function wpv_filter_order_by_admin_summary($view_settings) {
     $view_settings = wpv_order_by_default_settings($view_settings);
     switch($view_settings['orderby']) {
@@ -36,6 +39,9 @@ function wpv_filter_order_by_admin_summary($view_settings) {
     echo sprintf(__(' ordered by %s, %s', 'wpv-views'), $order_by, $order);
 
 }
+
+// DEPRECATED
+// Only used in the old wpv-filter-types.php file
 
 function wpv_filter_order_by_admin($view_settings) {
 
@@ -83,12 +89,15 @@ function wpv_filter_order_by_admin($view_settings) {
     <?php
 }
 
-add_filter('wpv-view-get-content-summary', 'wpv_order_summary_filter', 5, 3);
+// DEPRECATED
+// New filter in the redesign/ folder
 
-function wpv_order_summary_filter($summary, $post_id, $view_settings) {
-	if(!isset($view_settings['query_type']) || (isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'posts')) {
+// add_filter('wpv-view-get-content-summary', 'wpv_order_summary_filter', 5, 3);
+
+function wpv_order_summary_filter( $summary, $post_id, $view_settings ) {
+	if( !isset( $view_settings['query_type'] ) || ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'posts' ) ) {
 		ob_start();
-		wpv_filter_order_by_admin_summary($view_settings);
+		wpv_filter_order_by_admin_summary( $view_settings );
 		$summary .= ob_get_contents();
 		ob_end_clean();
 	}

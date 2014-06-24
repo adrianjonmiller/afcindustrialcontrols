@@ -29,18 +29,11 @@ function add_view_filters($view_settings, $view_id) {
 			</h3>
 		</div>
 		<div class="wpv-setting">
-			<p class="js-no-filters"><?php _e( 'No filters set', 'wpv-views' ) ?></p>
-			<ul class="filter-list js-filter-list">
+			<p class="js-no-filters hidden"><?php _e( 'No filters set', 'wpv-views' ) ?></p>
+			<ul class="filter-list js-filter-list hidden">
 				<?php
 				if (isset($view_settings['query_type']) && isset($view_settings['query_type'][0])) {
-					switch ($view_settings['query_type'][0]) {
-						case 'posts':
-							do_action('wpv_add_filter_list_item', $view_settings);
-							break;
-						case 'taxonomy':
-							do_action('wpv_add_taxonomy_filter_list_item', $view_settings);
-							break;
-					}
+					wpv_display_filters_list( $view_settings['query_type'][0], $view_settings );
 				}
 				?>
 			</ul>
@@ -48,24 +41,24 @@ function add_view_filters($view_settings, $view_id) {
 			<ul class="js-filter-placeholder hidden">
 				<li id='js-row-taxonomy' class='filter-row-multiple js-filter-row js-filter-row-multiple js-filter-for-posts js-filter-taxonomy js-filter-row-taxonomy'>
 					<p class='edit-filter js-wpv-filter-edit-controls'>
-						<button class="button-secondary edit-trigger js-wpv-filter-edit-open"><?php _e('Edit','wpv-views') ?></button>
-						<i class='icon-remove-sign js-filter-taxonomy-row-remove' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_row_delete_nonce' ); ?>'></i>
+						<i class='button-secondary icon-edit icon-large edit-trigger js-wpv-filter-edit-open' title='<?php echo esc_attr( __('Edit this filter', 'wpv-views') ); ?>'></i>
+						<i class='button-secondary icon-trash icon-large js-filter-taxonomy-row-remove' title='<?php echo esc_attr( __('Delete this filter', 'wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_row_delete_nonce' ); ?>'></i>
 					</p>
 					<div id="wpv-filter-taxonomy-edit" class="wpv-filter-edit js-filter-taxonomy-edit js-wpv-filter-edit">
 						<div class="wpv-filter-taxonomy-relationship js-wpv-filter-taxonomy-relationship">
 
-							<p><strong><?php _e('Taxonomy relationship:', 'wpv-views') ?></strong></p>
+							<h4><?php _e('Taxonomy relationship:', 'wpv-views') ?></h4>
 							<p>
 								<?php _e('Relationship to use when querying with multiple taxonomies:', 'wpv-views'); ?>
 								<select name="taxonomy_relationship">
-									<option value="OR"><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
+									<option value="AND"><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
 									<?php
 									if (!isset($view_settings['taxonomy_relationship'])) {
-										$view_settings['taxonomy_relationship'] = 'OR';
+										$view_settings['taxonomy_relationship'] = 'AND';
 									}
-									$selected = $view_settings['taxonomy_relationship']=='AND' ? ' selected="selected"' : '';
+									$selected = $view_settings['taxonomy_relationship']=='OR' ? ' selected="selected"' : '';
 									?>
-									<option value="AND" <?php echo $selected ?>><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
+									<option value="OR"<?php echo $selected ?>><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
 								</select>
 							</p>
 						</div>
@@ -79,14 +72,14 @@ function add_view_filters($view_settings, $view_id) {
 										); ?>
 						</p>
 					</div>
-					<p class='wpv-filter-taxonomy-edit-summary js-wpv-filter-summary js-wpv-filter-taxonomy-summary'>
+					<p class='wpv-filter-edit-summary wpv-filter-taxonomy-edit-summary js-wpv-filter-summary js-wpv-filter-taxonomy-summary'>
 						<?php _e('Select posts with taxonomy: ', 'wpv-views');?>
 					</p>
 				</li>
 				<li id='js-row-custom-field' class='filter-row-multiple js-filter-row js-filter-row-multiple js-filter-for-posts js-filter-custom-field js-filter-row-custom-field'>
 					<p class='edit-filter js-wpv-filter-edit-controls'>
-						<button class="button-secondary edit-trigger js-wpv-filter-edit-open"><?php _e('Edit','wpv-views') ?></button>
-						<i class='icon-remove-sign js-filter-custom-field-row-remove' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_custom_field_row_delete_nonce' ); ?>'></i>
+						<i class="button-secondary icon-edit icon-large edit-trigger js-wpv-filter-edit-open" title="<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>"></i>
+						<i class='button-secondary icon-trash icon-large js-filter-custom-field-row-remove' title="<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>" data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_custom_field_row_delete_nonce' ); ?>'></i>
 					</p>
 					<div id="wpv-filter-custom-field-edit" class="wpv-filter-edit js-filter-custom-field-edit js-wpv-filter-edit">
 						<div class="wpv-filter-custom-field-relationship js-wpv-filter-custom-field-relationship-container">
@@ -95,13 +88,13 @@ function add_view_filters($view_settings, $view_id) {
 							<p>
 								<?php _e('Relationship to use when querying with multiple custom fields:', 'wpv-views'); ?>
 								<select name="custom_fields_relationship" class="js-wpv-filter-custom-fields-relationship">
-									<option value="OR"><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
+									<option value="AND"><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
 									<?php
 									if (!isset($view_settings['custom_fields_relationship'])) {
-										$view_settings['custom_fields_relationship'] = 'OR';
+										$view_settings['custom_fields_relationship'] = 'AND';
 									}
-									$selected = $view_settings['custom_fields_relationship']=='AND' ? ' selected="selected"' : ''; ?>
-									<option value="AND" <?php echo $selected ?>><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
+									$selected = $view_settings['custom_fields_relationship']=='OR' ? ' selected="selected"' : ''; ?>
+									<option value="OR"<?php echo $selected ?>><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
 								</select>
 							</p>
 						</div>
@@ -115,8 +108,44 @@ function add_view_filters($view_settings, $view_id) {
 											); ?>
 						</p>
 					</div>
-					<p class='wpv-filter-custom-field-edit-summary js-wpv-filter-summary js-wpv-filter-custom-field-summary'>
-						<?php _e('Select posts with custom fields: ', 'wpv-views');?>
+					<p class='wpv-filter-edit-summary wpv-filter-custom-field-edit-summary js-wpv-filter-summary js-wpv-filter-custom-field-summary'>
+						<?php _e('Select posts with custom field: ', 'wpv-views');?>
+					</p>
+				</li>
+				<li id='js-row-usermeta-field' class='filter-row-multiple js-filter-row js-filter-row-multiple js-filter-for-posts js-filter-usermeta-field js-filter-row-usermeta-field'>
+					<p class='edit-filter js-wpv-filter-edit-controls'>
+						<i class="button-secondary icon-edit icon-large edit-trigger js-wpv-filter-edit-open" title="<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>"></i>
+						<i class='button-secondary icon-trash icon-large js-filter-usermeta-field-row-remove' title="<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>" data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_usermeta_field_row_delete_nonce' ); ?>'></i>
+					</p>
+					<div id="wpv-filter-usermeta-field-edit" class="wpv-filter-edit js-filter-usermeta-field-edit js-wpv-filter-edit">
+						<div class="wpv-filter-usermeta-field-relationship js-wpv-filter-usermeta-field-relationship-container">
+
+							<p><strong><?php _e('Usermeta field relationship:', 'wpv-views') ?></strong></p>
+							<p>
+								<?php _e('Relationship to use when querying with multiple usermeta fields:', 'wpv-views'); ?>
+								<select name="usermeta_fields_relationship" class="js-wpv-filter-usermeta-fields-relationship">
+									<option value="AND"><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
+									<?php
+									if (!isset($view_settings['usermeta_fields_relationship'])) {
+										$view_settings['usermeta_fields_relationship'] = 'AND';
+									}
+									$selected = $view_settings['usermeta_fields_relationship']=='OR' ? ' selected="selected"' : ''; ?>
+									<option value="OR"<?php echo $selected ?>><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
+								</select>
+							</p>
+						</div>
+						<p>
+							<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-usermeta-field-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_usermeta_field_nonce' ); ?>" />
+						</p>
+						<p class="wpv-custom-fields-help">
+							<?php echo sprintf(__('%sLearn about filtering by usermeta fields%s', 'wpv-views'),
+											'<a class="wpv-help-link" href="' . WPV_FILTER_BY_USER_FIELDS_LINK . '" target="_blank">',
+											' &raquo;</a>'
+											); ?>
+						</p>
+					</div>
+					<p class='wpv-filter-edit-summary wpv-filter-usermeta-field-edit-summary js-wpv-filter-summary js-wpv-filter-usermeta-field-summary'>
+						<?php _e('Select users with usermeta field: ', 'wpv-views');?>
 					</p>
 				</li>
 			</ul>
@@ -128,16 +157,16 @@ function add_view_filters($view_settings, $view_id) {
 			// TODO all the following alerts should be added using javascript
 				?>
 			</p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-missing"><?php echo __('This field can not be empty', 'wpv-views'); ?></p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-url-ilegal"><?php echo __('Only lowercase letters, numbers, hyphens and underscores allowed as URL parameters', 'wpv-views'); ?></p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-shortcode-ilegal"><?php echo __('Only lowercase letters and numbers allowed as shortcode attributes', 'wpv-views'); ?></p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-wordpress"><?php echo __('This is a word reserved by WordPress', 'wpv-views'); ?></p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-toolset"><?php echo __('This is a word reserved by any of the ToolSet plugins', 'wpv-views'); ?></p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-post-type"><?php echo __('There is a post type named like that', 'wpv-views'); ?></p>
-			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-taxonomy"><?php echo __('There is a taxonomy named like that', 'wpv-views'); ?></p>
-			<p class="toolset-alert js-filter-info js-wpv-filter-parent-type-not-hierarchical"><?php echo '<i class="icon-warning-sign"></i> ' . __('The posts you want to display are not hierarchical, so this filter will not work', 'wpv-views'); ?></p>
-			<p class="toolset-alert js-filter-info js-wpv-filter-taxonomy-parent-changed"><?php echo '<i class="icon-warning-sign"></i> ' . __('The taxonomy you want to display has changed, so this filter needs some action', 'wpv-views'); ?></p>
-			<p class="toolset-alert js-filter-info js-wpv-filter-taxonomy-term-changed"><?php echo '<i class="icon-warning-sign"></i> ' . __('The taxonomy you want to display has changed, so this filter needs some action', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-missing hidden"><?php echo __('This field can not be empty', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-url-ilegal hidden"><?php echo __('Only lowercase letters, numbers, hyphens and underscores allowed as URL parameters', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-shortcode-ilegal hidden"><?php echo __('Only lowercase letters and numbers allowed as shortcode attributes', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-wordpress hidden"><?php echo __('This is a word reserved by WordPress', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-toolset hidden"><?php echo __('This is a word reserved by any of the ToolSet plugins', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-post-type hidden"><?php echo __('There is a post type named like that', 'wpv-views'); ?></p>
+			<p class="toolset-alert toolset-alert-error js-filter-error js-wpv-param-forbidden-taxonomy hidden"><?php echo __('There is a taxonomy named like that', 'wpv-views'); ?></p>
+			<p class="toolset-alert js-filter-info js-wpv-filter-parent-type-not-hierarchical hidden"><?php echo '<i class="icon-warning-sign"></i> ' . __('The posts you want to display are not hierarchical, so this filter will not work', 'wpv-views'); ?></p>
+			<p class="toolset-alert js-filter-info js-wpv-filter-taxonomy-parent-changed hidden"><?php echo '<i class="icon-warning-sign"></i> ' . __('The taxonomy you want to display has changed, so this filter needs some action', 'wpv-views'); ?></p>
+			<p class="toolset-alert js-filter-info js-wpv-filter-taxonomy-term-changed hidden"><?php echo '<i class="icon-warning-sign"></i> ' . __('The taxonomy you want to display has changed, so this filter needs some action', 'wpv-views'); ?></p>
 		<?php
 	//	echo '<pre>';print_r($view_settings);echo '</pre>';
 		?>
@@ -197,6 +226,22 @@ function add_view_filters($view_settings, $view_id) {
 				<button class="button js-dialog-close js-filters-cancel-filter"><?php _e('Cancel','wpv-views') ?></button>
 				<button class="button button-primary js-filters-custom-field-delete-filter-row" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_custom_field_row_delete_nonce' ); ?>"><?php _e('Delete all custom field filters','wpv-views') ?></button>
 				<p><?php echo sprintf(__('or %sEdit the filter and delete specific custom field filters%s', 'wpv-views'), '<a href="#" class="js-filter-custom-field-edit-filter-row">', '</a>'); ?></p>
+			</div>
+		</div>
+		<div class="wpv-dialog js-filter-usermeta-field-delete-filter-row-dialog">
+			<div class="wpv-dialog-header">
+				<h2><?php _e('Delete usermeta field filters','wpv-views') ?></h2>
+				<i class="icon-remove js-dialog-close"></i>
+			</div>
+			<div class="wpv-dialog-content">
+				<p>
+					<strong><?php _e('There are more than one usermeta field filters. What would you like to do?', 'wpv-views'); ?></strong>
+				</p>
+			</div>
+			<div class="wpv-dialog-footer">
+				<button class="button js-dialog-close js-filters-cancel-filter"><?php _e('Cancel','wpv-views') ?></button>
+				<button class="button button-primary js-filters-usermeta-field-delete-filter-row" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_usermeta_field_row_delete_nonce' ); ?>"><?php _e('Delete all usermeta field filters','wpv-views') ?></button>
+				<p><?php echo sprintf(__('or %sEdit the filter and delete specific usermeta field filters%s', 'wpv-views'), '<a href="#" class="js-filter-usermeta-field-edit-filter-row">', '</a>'); ?></p>
 			</div>
 		</div>
 
@@ -264,12 +309,16 @@ function wpv_filters_add_filter_row_callback() {
 	if (!isset($view_array['taxonomy_type']) || empty($view_array['taxonomy_type'])) {
 		$view_array['taxonomy_type'] = array('category');
 	}
+	if (!isset($view_array['roles_type']) || empty($view_array['roles_type'])) {
+		$view_array['roles_type'] = array('administrator');
+	}
 	if (!isset($view_array['post_type']) || empty($view_array['post_type'])) {
 		$view_array['post_type'] = array();
 	}
 	$filters = array();
 	$filters = apply_filters('wpv_filters_add_filter', $filters, $view_array['post_type']);
 	$filters = apply_filters('wpv_taxonomy_filters_add_filter', $filters, $view_array['taxonomy_type'][0]);
+	$filters = apply_filters('wpv_users_filters_add_filter', $filters, $view_array['roles_type'][0]);
 	if (isset($filters[$_POST['filter_type']])) {
 		if (isset($filters[$_POST['filter_type']]['args'])) {
 			call_user_func($filters[$_POST['filter_type']]['callback'], $filters[$_POST['filter_type']]['args']);
@@ -284,6 +333,7 @@ function wpv_filters_add_filter_row_callback() {
 function give_group_to_field( $filters )
 {
 	$generics = array( 'post_author', 'post_status', 'post_search', 'post_parent', 'post_relationship', 'post_id' );
+	$users_filters = array( 'users_filter', 'usermeta_filter');
 	$groups = array();
 
 	foreach( $filters as $type => $filter )
@@ -301,7 +351,7 @@ function give_group_to_field( $filters )
 		{
 				$g = '';
 				$nice_name = explode('custom-field-wpcf-', $type);
-	    		$id = ( isset($nice_name[1] ) ) ? $nice_name[1] : $type;
+				$id = ( isset($nice_name[1] ) ) ? $nice_name[1] : $type;
 				if( function_exists('wpcf_admin_fields_get_groups_by_field') )
 				{
 					foreach( wpcf_admin_fields_get_groups_by_field( $id ) as $gs )
@@ -309,9 +359,55 @@ function give_group_to_field( $filters )
 						$g = $gs['name'];
 					}
 				}
-				$gr = $g ? $g : "Types fields";
+				$gr = $g ? $g : "Custom fields";
 
 				$groups[$gr][$type] = $filter;
+		}
+		else if( strpos($type, 'custom-field-views_woo_') !== false )
+		{
+			$g = '';
+			$nice_name = explode('custom-field-', $type);
+	    		$id = ( isset($nice_name[1] ) ) ? $nice_name[1] : $type;
+			if( function_exists('wpcf_admin_fields_get_groups_by_field') )
+			{
+				foreach( wpcf_admin_fields_get_groups_by_field( $id ) as $gs )
+				{
+					$g = $gs['name'];
+				}
+			}
+			$gr = $g ? $g : "WooCommerce Views filter fields";
+
+			$groups[$gr][$type] = $filter;
+		}
+        
+        else if( strpos($type, 'usermeta-field-basic-') !== false )
+        {
+            $gr = "Basic fields";
+            $groups[$gr][$type] = $filter;
+        }
+        else if( strpos($type, 'usermeta-field-wpcf-') !== false )
+        {
+                $g = '';
+                $nice_name = explode('usermeta-field-wpcf-', $type);
+                $id = ( isset($nice_name[1] ) ) ? $nice_name[1] : $type;
+                if( function_exists('wpcf_admin_fields_get_groups_by_field') )
+                {
+                    foreach( wpcf_admin_fields_get_groups_by_field( $id, 'wp-types-user-group' ) as $gs )
+                    {
+                        $g = $gs['name'];
+                    }
+                }
+                $gr = $g ? $g : "Users fields";
+
+                $groups[$gr][$type] = $filter;
+        }
+        else if( strpos($type, 'usermeta-field-') !== false &&  strpos($type, 'usermeta-field-basic-') === false &&  strpos($type, 'usermeta-field-wpcf-') === false )
+        {
+                $gr = "User fields";
+                $groups[$gr][$type] = $filter;
+        }
+		else if( in_array( $type,  $users_filters) ){
+			$groups["Users filters"][$type] = $filter;
 		}
 		else
 		{
@@ -327,6 +423,7 @@ function wpv_filters_add_filter_select($view_settings) {
 	$filters = array();
 	if (!isset($view_settings['post_type'])) $view_settings['post_type'] = array();
 	if (!isset($view_settings['taxonomy_type'])) $view_settings['taxonomy_type'] = array('category');
+	if (!isset($view_settings['roles_type'])) $view_settings['roles_type'] = array('users');
 	if (isset($view_settings['query_type']) && isset($view_settings['query_type'][0])) {
 		switch ($view_settings['query_type'][0]) {
 			case 'posts':
@@ -335,10 +432,13 @@ function wpv_filters_add_filter_select($view_settings) {
 			case 'taxonomy':
 				$filters = apply_filters('wpv_taxonomy_filters_add_filter', $filters, $view_settings['taxonomy_type'][0]);
 				break;
+			case 'users':
+				$filters = apply_filters('wpv_users_filters_add_filter', $filters, $view_settings['roles_type'][0]);
+				break;	
 		}
 	}
 	?>
-
+	
 	<select id="filter-add-select" class="js-filter-add-select">
 	<option value="-1"><?php echo __('--- Please select ---', 'wpv-views'); ?></option>
 	<?php
@@ -382,13 +482,67 @@ function wpv_filter_update_filters_list_callback() {
 	$nonce = $_POST["nonce"];
 	if (! wp_verify_nonce($nonce, 'wpv_view_filter_update_filters_list_nonce') ) die("Security check");
 	$view_array = get_post_meta($_POST["id"], '_wpv_settings', true);
-	switch ($_POST["query_type"]) {
+	$return_result = array();
+	// Filters list
+	$filters_list = '';
+	ob_start();
+	wpv_display_filters_list( $view_array['query_type'][0], $view_array );
+	$filters_list = ob_get_contents();
+	ob_end_clean();
+	$return_result['wpv_filter_update_filters_list'] = $filters_list;
+	// Now, the dependent parametric search structure
+	$dps_structure = '';
+	ob_start();
+	wpv_dps_settings_structure( $view_array, $_POST["id"] );
+	$dps_structure = ob_get_contents();
+	ob_end_clean();
+	$return_result['wpv_dps_settings_structure'] = $dps_structure;
+	$return_result['success'] = $_POST['id'];
+	echo json_encode( $return_result );
+	die();
+}
+
+add_action('wp_ajax_wpv_filter_make_intersection_filters', 'wpv_filter_make_intersection_filters');
+
+function wpv_filter_make_intersection_filters() { // TODO this is undone still
+	$nonce = $_POST["nonce"];
+	if (! wp_verify_nonce( $nonce, 'wpv_view_make_intersection_filters' ) ) die( "Security check" );
+	$view_array = get_post_meta( $_POST["id"], '_wpv_settings', true );
+	$view_array['taxonomy_relationship'] = 'AND';
+	$view_array['custom_fields_relationship'] = 'AND';
+	$view_array['usermeta_fields_relationship'] = 'AND';
+	update_post_meta( $_POST["id"], '_wpv_settings', $view_array );
+//	wpv_display_filters_list( $_POST["query_type"], $view_array );
+	$return_result = array();
+	// Filters list
+	$filters_list = '';
+	ob_start();
+	wpv_display_filters_list( $view_array['query_type'][0], $view_array );
+	$filters_list = ob_get_contents();
+	ob_end_clean();
+	$return_result['wpv_filter_update_filters_list'] = $filters_list;
+	// Now, the dependent parametric search structure
+	$dps_structure = '';
+	ob_start();
+	wpv_dps_settings_structure( $view_array, $_POST["id"] );
+	$dps_structure = ob_get_contents();
+	ob_end_clean();
+	$return_result['wpv_dps_settings_structure'] = $dps_structure;
+	$return_result['success'] = $_POST['id'];
+	echo json_encode( $return_result );
+	die();
+}
+
+function wpv_display_filters_list( $query_type, $view_settings ) {
+	switch ( $query_type ) {
 		case 'posts':
-			do_action('wpv_add_filter_list_item', $view_array);
+			do_action('wpv_add_filter_list_item', $view_settings);
 			break;
 		case 'taxonomy':
-			do_action('wpv_add_taxonomy_filter_list_item', $view_array);
+			do_action('wpv_add_taxonomy_filter_list_item', $view_settings);
+			break;
+		case 'users':
+			do_action('wpv_add_users_filter_list_item', $view_settings);
 			break;
 	}
-	die();
 }

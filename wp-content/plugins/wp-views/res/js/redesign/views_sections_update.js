@@ -23,24 +23,32 @@ jQuery(document).ready(function(){
 var view_settings = [];
 view_settings['.js-wpv-title'] = jQuery('.js-title').val();
 view_settings['.js-wpv-description'] = jQuery('.js-wpv-description').val();
+view_settings['.js-wpv-slug'] = jQuery('.js-wpv-slug').val();
 view_settings['.js-wpv-layout-settings-extra-js'] = jQuery('.js-wpv-layout-settings-extra-js').val();
-view_settings['.js-wpv-query-type'] = jQuery('.js-wpv-query-type').val();
+view_settings['.js-wpv-query-type'] = jQuery('input:radio.js-wpv-query-type:checked').val();
 view_settings['.js-wpv-query-post-items'] = [];
-jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked').each(function(){
+jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked, .js-wpv-query-users-type:checked').each(function(){
 	view_settings['.js-wpv-query-post-items'].push(jQuery(this).val());
 });
 view_settings['.js-wpv-query-options-post-type-dont'] = jQuery('.js-wpv-query-options-post-type-dont:checked').length;
 view_settings['.js-wpv-query-options-taxonomy-hide-empty'] = jQuery('.js-wpv-query-options-taxonomy-hide-empty:checked').length;
 view_settings['.js-wpv-query-options-taxonomy-non-empty-decendants'] = jQuery('.js-wpv-query-options-taxonomy-non-empty-decendants:checked').length;
 view_settings['.js-wpv-query-options-taxonomy-pad-counts'] = jQuery('.js-wpv-query-options-taxonomy-pad-counts:checked').length;
+view_settings['.js-wpv-query-options-users-show-current'] = jQuery('.js-wpv-query-options-users-show-current:checked').length;
+//view_settings['.js-wpv-query-options-users-show-multisite'] = jQuery('.js-wpv-query-options-users-show-multisite:checked').val();
 view_settings['.js-wpv-posts-orderby'] = jQuery('.js-wpv-posts-orderby').val();
 view_settings['.js-wpv-posts-order'] = jQuery('.js-wpv-posts-order').val();
 view_settings['.js-wpv-taxonomy-orderby'] = jQuery('.js-wpv-taxonomy-orderby').val();
 view_settings['.js-wpv-taxonomy-order'] = jQuery('.js-wpv-taxonomy-order').val();
+view_settings['.js-wpv-users-orderby'] = jQuery('.js-wpv-users-orderby').val();
+view_settings['.js-wpv-users-order'] = jQuery('.js-wpv-users-order').val();
 view_settings['.js-wpv-limit'] = jQuery('.js-wpv-limit').val();
 view_settings['.js-wpv-offset'] = jQuery('.js-wpv-offset').val();
 view_settings['.js-wpv-taxonomy-limit'] = jQuery('.js-wpv-taxonomy-limit').val();
 view_settings['.js-wpv-taxonomy-offset'] = jQuery('.js-wpv-taxonomy-offset').val();
+view_settings['.js-wpv-users-limit'] = jQuery('.js-wpv-users-limit').val();
+view_settings['.js-wpv-users-offset'] = jQuery('.js-wpv-users-offset').val();
+view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
 
 var codemirror_views_query = icl_editor.codemirror('wpv_filter_meta_html_content', true),
 codemirror_views_query_val = codemirror_views_query.getValue(),
@@ -59,9 +67,9 @@ codemirror_views_content_val = codemirror_views_content.getValue();
 
 // Description update
 
-jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title', function(){
+jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title, .js-wpv-slug', function(){
 	jQuery('.js-wpv-title-description-update').parent().find('.toolset-alert').remove();
-	if (view_settings['.js-wpv-description'] != jQuery('.js-wpv-description').val() || view_settings['.js-wpv-title'] != jQuery('.js-title').val()) {
+	if (view_settings['.js-wpv-description'] != jQuery('.js-wpv-description').val() || view_settings['.js-wpv-title'] != jQuery('.js-title').val() || view_settings['.js-wpv-slug'] != jQuery('.js-wpv-slug').val()) {
 		jQuery('.js-wpv-title-description-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
 	} else {
@@ -74,10 +82,6 @@ jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title', f
 
 jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 	e.preventDefault();
-	var view_settings_temp = [];
-	view_settings_temp['.js-wpv-title'] = view_settings['.js-wpv-title'];
-	view_settings['.js-wpv-description'] = jQuery('.js-wpv-description').val();
-	view_settings['.js-wpv-title'] = jQuery('.js-title').val();
 	var update_message = jQuery(this).data('success'),
 		unsaved_message = jQuery(this).data('unsaved'),
 		nonce = jQuery(this).data('nonce'),
@@ -88,8 +92,9 @@ jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 	var data = {
 		action: 'wpv_update_title_description',
 		id: data_view_id,
-		description: view_settings['.js-wpv-description'],
-		title: view_settings['.js-wpv-title'],
+		description: jQuery('.js-wpv-description').val(),
+		title: jQuery('.js-title').val(),
+		slug: jQuery('.js-wpv-slug').val(),
 		edit: 'View',
 		wpnonce: nonce
 	};
@@ -108,12 +113,14 @@ jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 					inline:true,
 					stay:true
 				});
-				view_settings['.js-wpv-title'] = view_settings_temp['.js-wpv-title'];
 				return false;
 			}
 			// If all is fine, response is post_ID
 			if ( (typeof(response) !== 'undefined') && (response === data.id)) {
 				jQuery('.js-wpv-title-description-update').removeClass('js-wpv-section-unsaved');
+				view_settings['.js-wpv-description'] = jQuery('.js-wpv-description').val();
+				view_settings['.js-wpv-title'] = jQuery('.js-title').val();
+				view_settings['.js-wpv-slug'] = jQuery('.js-wpv-slug').val();
 				if (jQuery('.js-wpv-section-unsaved').length < 1) {
 					setConfirmUnload(false);
 				}
@@ -152,12 +159,12 @@ jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 
 jQuery(document).on('change', '.js-wpv-query-type', function(){
 	jQuery('.js-wpv-query-type-update').parent().find('.toolset-alert-error').remove();
-	if (view_settings['.js-wpv-query-type'] != jQuery(this).val()) {
+	if (view_settings['.js-wpv-query-type'] != jQuery('input:radio.js-wpv-query-type:checked').val()) {
 		jQuery('.js-wpv-query-type-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
 	} else {
 		var wpv_query_post_items = [];
-		jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked').each(function(){
+		jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked, .js-wpv-query-users-type:checked').each(function(){
 			wpv_query_post_items.push(jQuery(this).val());
 		});
 		if (jQuery(view_settings['.js-wpv-query-post-items']).not(wpv_query_post_items).length == 0 && jQuery(wpv_query_post_items).not(view_settings['.js-wpv-query-post-items']).length == 0) {
@@ -172,14 +179,14 @@ jQuery(document).on('change', '.js-wpv-query-type', function(){
 		}
 	}
 });
-jQuery(document).on('change', '.js-wpv-query-post-type, .js-wpv-query-taxonomy-type', function(){
+jQuery(document).on('change', '.js-wpv-query-post-type, .js-wpv-query-taxonomy-type, .js-wpv-query-users-type', function(){
 	jQuery('.js-wpv-query-type-update').parent().find('.toolset-alert-error').remove();
 	var wpv_query_post_items = [];
-	jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked').each(function(){
+	jQuery('.js-wpv-query-post-type:checked, .js-wpv-query-taxonomy-type:checked, .js-wpv-query-users-type:checked').each(function(){
 		wpv_query_post_items.push(jQuery(this).val());
 	});
 	if (jQuery(view_settings['.js-wpv-query-post-items']).not(wpv_query_post_items).length == 0 && jQuery(wpv_query_post_items).not(view_settings['.js-wpv-query-post-items']).length == 0) {
-		if (view_settings['.js-wpv-query-type'] != jQuery('.js-wpv-query-type').val()) {
+		if (view_settings['.js-wpv-query-type'] != jQuery('input:radio.js-wpv-query-type:checked').val()) {
 			jQuery('.js-wpv-query-type-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 			setConfirmUnload(true);
 		} else {
@@ -202,9 +209,10 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 		nonce = jQuery(this).data('nonce'),
 		wpv_query_post_items = [],
 		wpv_query_taxonomy_items = [],
+		wpv_query_users_items = [],
 		spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertBefore(jQuery(this)).show(),
 		data_view_id = jQuery('.js-post_ID').val();
-	view_settings['.js-wpv-query-type'] = jQuery('.js-wpv-query-type').val();
+	view_settings['.js-wpv-query-type'] = jQuery('input:radio.js-wpv-query-type:checked').val();
 	view_settings['.js-wpv-query-post-items'] = [];
 	jQuery('.js-wpv-query-post-type:checked').each(function(){
 		wpv_query_post_items.push(jQuery(this).val());
@@ -212,6 +220,10 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 	});
 	jQuery('.js-wpv-query-taxonomy-type:checked').each(function(){
 		wpv_query_taxonomy_items.push(jQuery(this).val());
+		view_settings['.js-wpv-query-post-items'].push(jQuery(this).val());
+	});
+	jQuery('.js-wpv-query-users-type:checked').each(function(){
+		wpv_query_users_items.push(jQuery(this).val());
 		view_settings['.js-wpv-query-post-items'].push(jQuery(this).val());
 	});
 	jQuery(this).parent().find('.toolset-alert-error').remove();
@@ -222,6 +234,7 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 		query_type: view_settings['.js-wpv-query-type'],
 		post_types: wpv_query_post_items,
 		taxonomies: wpv_query_taxonomy_items,
+		users: wpv_query_users_items,
 		wpnonce: nonce
 	};
 	jQuery.ajax({
@@ -230,57 +243,30 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 		url:ajaxurl,
 		data:data,
 		success:function(response){
-			if ( (typeof(response) !== 'undefined') && (response === data.id)) {
-				jQuery('.js-wpv-query-type-update').removeClass('js-wpv-section-unsaved');
-				jQuery('.js-screen-options').find('.toolset-alert').remove();
-				if (jQuery('.js-wpv-section-unsaved').length < 1) {
-					setConfirmUnload(false);
-				}
-				jQuery('.js-wpv-query-type-update').parent().wpvToolsetMessage({
-					text:update_message,
-					type:'success',
-					inline:true,
-					stay:false
-				});
-				var data_new = {
-					action: 'wpv_filter_update_filters_list',
-					id: data_view_id,
-					query_type: view_settings['.js-wpv-query-type'],
-					nonce: jQuery('.js-wpv-filter-update-filters-list-nonce').val()
-				}
-				jQuery.ajax({
-					async:false,
-					type:"POST",
-					url:ajaxurl,
-					data:data_new,
-					success:function(response){
-						if ( (typeof(response) !== 'undefined') ) {
-							if (0 !== response) {
-								jQuery('.js-filter-list').html(response);
-								wpv_filters_colapse();
-								wpv_filters_exist();
-								wpv_validate_hierarchical_post_types();
-								wpv_taxonomy_relationship();
-								wpv_validate_filter_taxonomy_parent();
-								wpv_taxonomy_mode();
-								wpv_taxonomy_relationship();
-								wpv_custom_field_initialize_compare();
-								wpv_custom_field_initialize_compare_mode();
-								wpv_custom_field_initialize_relationship();
-							} else {
-								console.log( "Error: WordPress AJAX returned ", response );
-							}
-						} else {
-							console.log( "Error: AJAX returned ", response );
-						}
-					},
-					error: function (ajaxContext) {
-						console.log( "Error: ", ajaxContext.responseText );
-					},
-					complete: function() {
-						
+			if ( (typeof(response) !== 'undefined') ) {
+				decoded_response = jQuery.parseJSON(response);
+				if ( decoded_response.success === data.id ) {
+					jQuery('.js-wpv-query-type-update').removeClass('js-wpv-section-unsaved');
+					jQuery('.js-screen-options').find('.toolset-alert').remove();
+					jQuery('.js-filter-list').html(decoded_response.wpv_filter_update_filters_list);
+					wpv_after_update_filters_list();
+					if ( decoded_response.wpv_update_flatten_types_relationship_tree == 'NONE' ) {
+						jQuery('.js-flatten-types-relation-tree').val('NONE');
+					} else {
+						jQuery('.js-flatten-types-relation-tree').val(decoded_response.wpv_update_flatten_types_relationship_tree);
 					}
-				});
+					jQuery('.js-wpv-dps-settings').html(decoded_response.wpv_dps_settings_structure);
+					view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
+					jQuery('.js-wpv-query-type-update').parent().wpvToolsetMessage({
+						text:update_message,
+						type:'success',
+						inline:true,
+						stay:false
+					});
+					if (jQuery('.js-wpv-section-unsaved').length < 1) {
+						setConfirmUnload(false);
+					}
+				}
 			} else {
 				jQuery('.js-wpv-query-type-update').parent().wpvToolsetMessage({
 					text:unsaved_message,
@@ -306,14 +292,35 @@ jQuery(document).on('click', '.js-wpv-query-type-update', function(e){
 	});
 });
 
-// Query options update
+function wpv_after_update_filters_list() {
+	wpv_filters_colapse();
+	wpv_filters_exist();
+	wpv_validate_hierarchical_post_types();
+	wpv_validate_filter_taxonomy_parent();
+	wpv_taxonomy_mode();
+	wpv_taxonomy_relationship();
+	wpv_custom_field_initialize_compare();
+	wpv_custom_field_initialize_compare_mode();
+	wpv_custom_field_initialize_relationship();
+	wpv_usermeta_field_initialize_compare();
+	wpv_usermeta_field_initialize_compare_mode();
+	wpv_usermeta_field_initialize_relationship();
+	view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
+	wpv_filter_taxonomy_selected = jQuery('.js-filter-list .js-filter-taxonomy input, .js-filter-list .js-filter-taxonomy select').serialize();
+	wpv_filter_custom_field_selected = jQuery('.js-filter-list .js-filter-custom-field input, .js-filter-list .js-filter-custom-field select').serialize();
+	wpv_filter_usermeta_field_selected = jQuery('.js-filter-list .js-filter-usermeta-field input, .js-filter-list .js-filter-usermeta-field select').serialize();
+}
 
-jQuery(document).on('change', '.js-wpv-query-options-post-type-dont, .js-wpv-query-options-taxonomy-hide-empty, .js-wpv-query-options-taxonomy-non-empty-decendants, .js-wpv-query-options-taxonomy-pad-counts', function(){
+// Query options update
+//.js-wpv-query-options-users-show-multisite,
+jQuery(document).on('change', '.js-wpv-query-options-users-show-current, .js-wpv-query-options-post-type-dont, .js-wpv-query-options-taxonomy-hide-empty, .js-wpv-query-options-taxonomy-non-empty-decendants, .js-wpv-query-options-taxonomy-pad-counts', function(){
 	jQuery('.js-wpv-query-options-update').parent().find('.toolset-alert-error').remove();
 	var dont = 0,
 		hide = 0,
 		empty = 0,
 		pad = 0;
+		uhide = 0;
+		//smulti = jQuery('.js-wpv-query-options-users-show-multisite:checked').val();
 	if (jQuery('.js-wpv-query-options-post-type-dont').attr('checked')) {
 		dont = 1;
 	}
@@ -326,10 +333,16 @@ jQuery(document).on('change', '.js-wpv-query-options-post-type-dont, .js-wpv-que
 	if (jQuery('.js-wpv-query-options-taxonomy-pad-counts').attr('checked')) {
 		pad = 1;
 	}
+	if (jQuery('.js-wpv-query-options-users-show-current').attr('checked')) {
+		uhide = 1;
+	}
+	//|| smulti != view_settings['.js-wpv-query-options-users-show-multisite']
 	if (dont != view_settings['.js-wpv-query-options-post-type-dont']
 		|| hide != view_settings['.js-wpv-query-options-taxonomy-hide-empty']
 		|| empty != view_settings['.js-wpv-query-options-taxonomy-non-empty-decendants']
 		|| pad != view_settings['.js-wpv-query-options-taxonomy-pad-counts']
+		|| uhide != view_settings['.js-wpv-query-options-users-show-current']
+		
 	) {
 		jQuery('.js-wpv-query-options-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
@@ -348,6 +361,9 @@ jQuery(document).on('click', '.js-wpv-query-options-update', function(e){
 	view_settings['.js-wpv-query-options-taxonomy-hide-empty'] = jQuery('.js-wpv-query-options-taxonomy-hide-empty:checked').length;
 	view_settings['.js-wpv-query-options-taxonomy-non-empty-decendants'] = jQuery('.js-wpv-query-options-taxonomy-non-empty-decendants:checked').length;
 	view_settings['.js-wpv-query-options-taxonomy-pad-counts'] = jQuery('.js-wpv-query-options-taxonomy-pad-counts:checked').length;
+	view_settings['.js-wpv-query-options-users-show-current'] = jQuery('.js-wpv-query-options-users-show-current:checked').length;
+	//view_settings['.js-wpv-query-options-users-show-multisite'] = jQuery('.js-wpv-query-options-users-show-multisite:checked').val();
+	
 	var update_message = jQuery(this).data('success'),
 		unsaved_message = jQuery(this).data('unsaved'),
 		nonce = jQuery(this).data('nonce'),
@@ -362,8 +378,10 @@ jQuery(document).on('click', '.js-wpv-query-options-update', function(e){
 		hide: view_settings['.js-wpv-query-options-taxonomy-hide-empty'],
 		empty: view_settings['.js-wpv-query-options-taxonomy-non-empty-decendants'],
 		pad: view_settings['.js-wpv-query-options-taxonomy-pad-counts'],
+		uhide : view_settings['.js-wpv-query-options-users-show-current'],
 		wpnonce: nonce
 	};
+	//smulti : view_settings['.js-wpv-query-options-users-show-multisite'],
 	jQuery.ajax({
 		async:false,
 		type:"POST",
@@ -420,12 +438,14 @@ jQuery(document).on('change', '.js-wpv-posts-orderby', function(){
 	}	
 });
 // Sorting update
-jQuery(document).on('change', '.js-wpv-posts-orderby, .js-wpv-posts-order, .js-wpv-taxonomy-orderby, .js-wpv-taxonomy-order', function(){
+jQuery(document).on('change', '.js-wpv-posts-orderby, .js-wpv-posts-order, .js-wpv-taxonomy-orderby, .js-wpv-taxonomy-order, .js-wpv-users-orderby, .js-wpv-users-order', function(){
 	jQuery('.js-wpv-ordering-update').parent().find('.toolset-alert-error').remove();
 	if (jQuery('.js-wpv-posts-orderby').val() != view_settings['.js-wpv-posts-orderby']
 		|| jQuery('.js-wpv-posts-order').val() != view_settings['.js-wpv-posts-order']
 		|| jQuery('.js-wpv-taxonomy-orderby').val() != view_settings['.js-wpv-taxonomy-orderby']
 		|| jQuery('.js-wpv-taxonomy-order').val() != view_settings['.js-wpv-taxonomy-order']
+		| jQuery('.js-wpv-users-orderby').val() != view_settings['.js-wpv-users-orderby']
+		|| jQuery('.js-wpv-users-order').val() != view_settings['.js-wpv-users-order']
 	) {
 		jQuery('.js-wpv-ordering-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
@@ -446,6 +466,8 @@ jQuery(document).on('click', '.js-wpv-ordering-update', function(e){
 	view_settings['.js-wpv-posts-order'] = jQuery('.js-wpv-posts-order').val();
 	view_settings['.js-wpv-taxonomy-orderby'] = jQuery('.js-wpv-taxonomy-orderby').val();
 	view_settings['.js-wpv-taxonomy-order'] = jQuery('.js-wpv-taxonomy-order').val();
+	view_settings['.js-wpv-users-orderby'] = jQuery('.js-wpv-users-orderby').val();
+	view_settings['.js-wpv-users-order'] = jQuery('.js-wpv-users-order').val();
 	var update_message = jQuery(this).data('success'),
 		unsaved_message = jQuery(this).data('unsaved'),
 		nonce = jQuery(this).data('nonce'),
@@ -460,6 +482,8 @@ jQuery(document).on('click', '.js-wpv-ordering-update', function(e){
 		order: view_settings['.js-wpv-posts-order'],
 		taxonomy_orderby: view_settings['.js-wpv-taxonomy-orderby'],
 		taxonomy_order: view_settings['.js-wpv-taxonomy-order'],
+		users_orderby: view_settings['.js-wpv-users-orderby'],
+		users_order: view_settings['.js-wpv-users-order'],
 		wpnonce: nonce
 	};
 	jQuery.ajax({
@@ -507,12 +531,14 @@ jQuery(document).on('click', '.js-wpv-ordering-update', function(e){
 
 // Limit & Offset update
 
-jQuery(document).on('change', '.js-wpv-limit, .js-wpv-offset, .js-wpv-taxonomy-limit, .js-wpv-taxonomy-offset', function(){
+jQuery(document).on('change', '.js-wpv-limit, .js-wpv-offset, .js-wpv-taxonomy-limit, .js-wpv-taxonomy-offset, .js-wpv-users-limit, .js-wpv-users-offset', function(){
 	jQuery('.js-wpv-limit-offset-update').parent().find('.toolset-alert-error').remove();
 	if (jQuery('.js-wpv-limit').val() != view_settings['.js-wpv-limit']
 		|| jQuery('.js-wpv-offset').val() != view_settings['.js-wpv-offset']
 		|| jQuery('.js-wpv-taxonomy-limit').val() != view_settings['.js-wpv-taxonomy-limit']
 		|| jQuery('.js-wpv-taxonomy-offset').val() != view_settings['.js-wpv-taxonomy-offset']
+		|| jQuery('.js-wpv-users-limit').val() != view_settings['.js-wpv-users-limit']
+		|| jQuery('.js-wpv-users-offset').val() != view_settings['.js-wpv-users-offset']
 	) {
 		jQuery('.js-wpv-limit-offset-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
@@ -531,6 +557,8 @@ jQuery(document).on('click', '.js-wpv-limit-offset-update', function(e){
 	view_settings['.js-wpv-offset'] = jQuery('.js-wpv-offset').val();
 	view_settings['.js-wpv-taxonomy-limit'] = jQuery('.js-wpv-taxonomy-limit').val();
 	view_settings['.js-wpv-taxonomy-offset'] = jQuery('.js-wpv-taxonomy-offset').val();
+	view_settings['.js-wpv-users-limit'] = jQuery('.js-wpv-users-limit').val();
+	view_settings['.js-wpv-users-offset'] = jQuery('.js-wpv-users-offset').val();
 	var update_message = jQuery(this).data('success'),
 		unsaved_message = jQuery(this).data('unsaved'),
 		nonce = jQuery(this).data('nonce'),
@@ -545,6 +573,8 @@ jQuery(document).on('click', '.js-wpv-limit-offset-update', function(e){
 		offset: view_settings['.js-wpv-offset'],
 		taxonomy_limit: view_settings['.js-wpv-taxonomy-limit'],
 		taxonomy_offset: view_settings['.js-wpv-taxonomy-offset'],
+		users_limit: view_settings['.js-wpv-users-limit'],
+		users_offset: view_settings['.js-wpv-users-offset'],
 		wpnonce: nonce
 	};
 	jQuery.ajax({
@@ -723,7 +753,7 @@ codemirror_views_query_js.on('change', function(){
 	}
 });
 
-jQuery(document).on('click', '.js-wpv-filter-extra-update', function(e){
+jQuery(document).on('click', '.js-wpv-filter-extra-update', function(e) {
 	e.preventDefault();
 	codemirror_views_query_val = codemirror_views_query.getValue();
 	codemirror_views_query_css_val = codemirror_views_query_css.getValue();
@@ -749,18 +779,23 @@ jQuery(document).on('click', '.js-wpv-filter-extra-update', function(e){
 		url:ajaxurl,
 		data:data,
 		success:function(response){
-			if ( (typeof(response) !== 'undefined') && (response === data.id)) {
-				jQuery('.js-wpv-filter-extra-update').removeClass('js-wpv-section-unsaved');
-				jQuery('.js-screen-options').find('.toolset-alert').remove();
-				if (jQuery('.js-wpv-section-unsaved').length < 1) {
-					setConfirmUnload(false);
+			if ( (typeof(response) !== 'undefined') ) {
+				decoded_response = jQuery.parseJSON(response);
+				if ( decoded_response.success === data.id ) {
+					jQuery('.js-wpv-filter-extra-update').removeClass('js-wpv-section-unsaved');
+					jQuery('.js-wpv-dps-settings').html(decoded_response.wpv_dps_settings_structure);
+					view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
+					jQuery('.js-screen-options').find('.toolset-alert').remove();
+					if (jQuery('.js-wpv-section-unsaved').length < 1) {
+						setConfirmUnload(false);
+					}
+					jQuery('.js-wpv-filter-extra-update').parent().wpvToolsetMessage({
+						text:update_message,
+						type:'success',
+						inline:true,
+						stay:false
+					});
 				}
-				jQuery('.js-wpv-filter-extra-update').parent().wpvToolsetMessage({
-					text:update_message,
-					type:'success',
-					inline:true,
-					stay:false
-				});
 			} else {
 				jQuery('.js-wpv-filter-extra-update').parent().wpvToolsetMessage({
 					text:unsaved_message,
@@ -785,6 +820,119 @@ jQuery(document).on('click', '.js-wpv-filter-extra-update', function(e){
 		}
 	});
 });
+
+// Parametric Search update
+
+jQuery(document).on('change keyup input cut paste', '.js-wpv-dps-settings input, .js-wpv-dps-settings select', function(){
+	wpv_dps_change_check();
+});
+
+function wpv_dps_change_check() {
+	jQuery('.js-wpv-filter-dps-update').parent().find('.toolset-alert-error').remove();
+	var newdps = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
+	if (view_settings['.js-wpv-filter-dps'] != newdps) {
+		jQuery('.js-wpv-filter-dps-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
+		setConfirmUnload(true);
+	} else {
+		jQuery('.js-wpv-filter-dps-update').prop('disabled', true).removeClass('button-primary').addClass('button-secondary').removeClass('js-wpv-section-unsaved');
+	//	jQuery('.js-screen-options').find('.toolset-alert').remove();
+		if (jQuery('.js-wpv-section-unsaved').length < 1) {
+			setConfirmUnload(false);
+		}
+	}
+}
+
+jQuery(document).on('click', '.js-wpv-filter-dps-update', function(){
+	view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
+	var nonce = jQuery(this).data('nonce'),
+	data_view_id = jQuery('.js-post_ID').val(),
+	spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertBefore(jQuery(this)).show(),
+	update_message = jQuery(this).data('success'),
+	unsaved_message = jQuery(this).data('unsaved');
+	jQuery(this).parent().find('.toolset-alert-error').remove();
+	jQuery('.js-wpv-filter-dps-update').prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
+	var params = {
+		action: 'wpv_filter_update_dps_settings',
+		id: data_view_id,
+		dpsdata: view_settings['.js-wpv-filter-dps'],
+		nonce: nonce
+	}
+	jQuery.ajax({
+		async:false,
+		type:"POST",
+		url:ajaxurl,
+		data:params,
+		success:function(response){
+			if ( (typeof(response) !== 'undefined') && (response === params.id)) {
+				jQuery('.js-wpv-filter-dps-update').removeClass('js-wpv-section-unsaved');
+				if (jQuery('.js-wpv-section-unsaved').length < 1) {
+					setConfirmUnload(false);
+				}
+				jQuery('.js-wpv-filter-dps-update').parent().wpvToolsetMessage({
+					text:update_message,
+					type:'success',
+					inline:true,
+					stay:false
+				});
+			} else {
+				jQuery('.js-wpv-filter-dps-update').parent().wpvToolsetMessage({
+					text:unsaved_message,
+					type:'error',
+					inline:true,
+					stay:true
+				});
+				console.log( "Error: AJAX returned ", response );
+			}
+		},
+		error:function(ajaxContext){
+			jQuery('.js-wpv-filter-dps-update').parent().wpvToolsetMessage({
+			     text:unsaved_message,
+			     type:'error',
+			     inline:true,
+			     stay:true
+			});
+			console.log( "Error: ", ajaxContext.responseText );
+		},
+		complete:function(){
+			spinnerContainer.remove();
+		}
+	});
+});
+
+// NOTE this is not used anymore, maybe needed at some point in the future NOTE well this is used on every update/delete filter call, so keep it
+
+function wpv_update_parametric_search_section() {
+	var data_view_id = jQuery('.js-post_ID').val(),
+	nonce = jQuery('.js-post_ID').data('nonce'),
+	data = {
+		action: 'wpv_update_parametric_search_section',
+		id: data_view_id,
+		nonce: nonce
+	};
+	jQuery.ajax({
+		async:false,
+		type:"POST",
+		url:ajaxurl,
+		data:data,
+		success:function(response){
+			if ( (typeof(response) !== 'undefined') ) {
+					jQuery('.js-wpv-dps-settings').html(response);
+					if (jQuery('.js-wpv-section-unsaved').length < 1) {
+						view_settings['.js-wpv-filter-dps'] = jQuery('.js-wpv-dps-settings input, .js-wpv-dps-settings select').serialize();
+						setConfirmUnload(false);
+					}
+			} else {
+					console.log( "Error: AJAX returned ", response );
+			}
+			},
+			error: function (ajaxContext) {
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+	});
+}
 
 // Layout Extra update
 
@@ -1079,7 +1227,7 @@ jQuery('.js-wpv-view-save-all').click(function(e){
 	});
 });
 
-// Confirmation dialog - prevent users to navigate way if there is unsaved data
+// Confirmation dialog - prevent users to navigate away if there is unsaved data
 
 function setConfirmUnload(on) {
 	if (on && jQuery('.js-wpv-section-unsaved').length > 0) {

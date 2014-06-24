@@ -44,18 +44,57 @@ if(is_admin()){
 	* Render parent filter item content in the filters list
 	*/
 
-	function wpv_get_list_item_ui_post_parent($selected, $view_settings = null) {
-		if (isset($view_settings['parent_mode']) && is_array($view_settings['parent_mode'])) {
+	function wpv_get_list_item_ui_post_parent( $selected, $view_settings = null ) {
+		global $wpdb;
+		if ( isset( $view_settings['parent_mode'] ) && is_array( $view_settings['parent_mode'] ) ) {
 			$view_settings['parent_mode'] = $view_settings['parent_mode'][0];
 		}
-
+		
+		if ( function_exists('icl_object_id') && isset( $view_settings['parent_id'] ) && !empty( $view_settings['parent_id'] ) ) {
+			// Adjust for WPML support
+			$target_post_type = $wpdb->get_var("SELECT post_type FROM {$wpdb->posts} WHERE ID='{$view_settings['parent_id']}'");
+			if ( $target_post_type ) {
+				$view_settings['parent_id'] = icl_object_id( $view_settings['parent_id'], $target_post_type, true );
+			}
+		}
+		
+		ob_start();
+		?>
+		<p class='wpv-filter-parent-edit-summary js-wpv-filter-summary js-wpv-filter-parent-summary'>
+			<?php echo wpv_get_filter_parent_summary_txt( $view_settings ); ?>
+		</p>
+		<p class='edit-filter js-wpv-filter-edit-controls'>
+			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-parent-edit-open' title='<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>'></i>
+			<i class='button-secondary icon-trash icon-large js-filter-remove' title='<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_parent_delete_nonce' ); ?>'></i>
+		</p>
+		<div id="wpv-filter-parent-edit" class="wpv-filter-edit js-wpv-filter-edit">
+			<fieldset>
+				<p><strong><?php echo __('Post parent', 'wpv-views'); ?>:</strong></p>
+				<div id="wpv-filter-parent" class="js-filter-parent-list">
+					<?php wpv_render_parent_options( array( 'view_settings' => $view_settings ) ); ?>
+				</div>
+			</fieldset>
+			<p>
+				<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-parent-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_parent_nonce' ); ?>" />
+			</p>
+			<!-- <p>
+				<?php echo sprintf(__('%sLearn about filtering by Post Parent%s', 'wpv-views'),
+					'<a class="wpv-help-link" href="' . WPV_FILTER_BY_POST_PARENT_LINK . '" target="_blank">',
+					' &raquo;</a>'
+				); ?>
+			</p> -->
+		</div>
+		<?php
+		$res = ob_get_clean();
+		return $res;
+		/*
 		ob_start();
 		wpv_render_parent_options(array('view_settings' => $view_settings));
 		$data = ob_get_clean();
 
 		$td = "<p class='wpv-filter-parent-edit-summary js-wpv-filter-summary js-wpv-filter-parent-summary'>\n";
 		$td .= wpv_get_filter_parent_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary js-wpv-filter-edit-open js-wpv-filter-parent-edit-open'>". __('Edit','wpv-views') ."</button>\n<i class='icon-remove-sign js-filter-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_parent_delete_nonce' ) . "'></i>\n</p>";
+		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-parent-edit-open' title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_parent_delete_nonce' ) . "'></i>\n</p>";
 		$td .= "<div id=\"wpv-filter-parent-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
 		$td .= '<fieldset>';
 		$td .= '<p><strong>' . __('Post parent', 'wpv-views') . ':</strong></p>';
@@ -77,6 +116,7 @@ if(is_admin()){
 		$td .= '</div>';
 
 		return $td;
+		*/
 	}
 	
 	/**
@@ -222,14 +262,43 @@ if(is_admin()){
 		if (isset($view_settings['taxonomy_type']) && is_array($view_settings['taxonomy_type']) && sizeof($view_settings['taxonomy_type']) > 0 ) {
 			$view_settings['taxonomy_type'] = $view_settings['taxonomy_type'][0];
 		}
-
+		
+		if ( function_exists('icl_object_id') && isset( $view_settings['taxonomy_type'] ) && isset( $view_settings['taxonomy_parent_id'] ) && !empty( $view_settings['taxonomy_parent_id'] ) ) {
+			// Adjust for WPML support
+			$view_settings['taxonomy_parent_id'] = icl_object_id( $view_settings['taxonomy_parent_id'], $view_settings['taxonomy_type'], true );
+		}
+		
+		ob_start();
+		?>
+		<p class='wpv-filter-taxonomy-parent-edit-summary js-wpv-filter-summary js-wpv-filter-taxonomy-parent-summary'>
+			<?php echo wpv_get_filter_taxonomy_parent_summary_txt( $view_settings ); ?>
+		</p>
+		<p class='edit-filter js-wpv-filter-edit-controls'>
+			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-taxonomy-parent-edit-open' title='<?php echo esc_attr( __('Edit this filter','wpv-views')); ?>'></i>
+			<i class='button-secondary icon-trash icon-large js-filter-remove' title='<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_parent_delete_nonce' ); ?>'></i>
+		</p>
+		<div id="wpv-filter-taxonomy-parent-edit" class="wpv-filter-edit js-wpv-filter-edit">
+			<fieldset>
+				<legend><strong><?php echo __('Taxonomy parent', 'wpv-views'); ?>:</strong></legend>
+				<div id="wpv-filter-taxonomy-parent" class="js-filter-taxonomy-parent-list">
+					<?php wpv_render_taxonomy_parent_options( array( 'view_settings' => $view_settings ) ); ?>
+				</div>
+			</fieldset>
+			<p>
+				<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-taxonomy-parent-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_parent_nonce' ); ?>" />
+			</p>
+		</div>
+		<?php
+		$res = ob_get_clean();
+		return $res;
+		/*
 		ob_start();
 		wpv_render_taxonomy_parent_options(array('view_settings' => $view_settings));
 		$data = ob_get_clean();
 
 		$td = "<p class='wpv-filter-taxonomy-parent-edit-summary js-wpv-filter-summary js-wpv-filter-taxonomy-parent-summary'>\n";
 		$td .= wpv_get_filter_taxonomy_parent_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary js-wpv-filter-edit-open js-wpv-filter-taxonomy-parent-edit-open'>". __('Edit','wpv-views') ."</button>\n<i class='icon-remove-sign js-filter-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_taxonomy_parent_delete_nonce' ) . "'></i>\n</p>";
+		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-taxonomy-parent-edit-open' title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_taxonomy_parent_delete_nonce' ) . "'></i>\n</p>";
 		$td .= "<div id=\"wpv-filter-taxonomy-parent-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
 		$td .= '<fieldset>';
 		$td .= '<legend><strong>' . __('Taxonomy parent', 'wpv-views') . ':</strong></legend>';
@@ -245,6 +314,7 @@ if(is_admin()){
 		$td .= '</div>';
 
 		return $td;
+		*/
 	}
 	
 	/**

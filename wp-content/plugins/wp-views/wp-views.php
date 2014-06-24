@@ -5,21 +5,25 @@ Plugin URI: http://wp-types.com/
 Description: When you need to create lists of items, Views is the solution. Views will query the content from the database, iterate through it and let you display it with flair. You can also enable pagination, search, filtering and sorting by site visitors.
 Author: ICanLocalize
 Author URI: http://wpml.org
-Version: 1.3.1
+Version: 1.6.1
 */
 
 if(defined('WPV_VERSION')) return;
 
-define('WPV_VERSION', '1.3.1');
+define('WPV_VERSION', '1.6.1');
 define('WPV_PATH', dirname(__FILE__));
 define('WPV_PATH_EMBEDDED', dirname(__FILE__) . '/embedded');
 define('WPV_FOLDER', basename(WPV_PATH));
-define('WPV_URL', plugins_url() . '/' . WPV_FOLDER);
+// define('WPV_URL', plugins_url() . '/' . WPV_FOLDER); NOTE fix SSL possible problems below
+if ( ( defined( 'FORCE_SSL_ADMIN' ) && FORCE_SSL_ADMIN ) || is_ssl() ) {
+    define('WPV_URL', rtrim( str_replace( 'http://', 'https://', plugins_url() ), '/' ) . '/' . WPV_FOLDER );
+}else{
+	define('WPV_URL', plugins_url() . '/' . WPV_FOLDER );
+}
 define('WPV_URL_EMBEDDED', WPV_URL . '/embedded');
 
-// For module manager views support
-define('_VIEWS_MODULE_MANAGER_KEY_','views');
-define('_VIEW_TEMPLATES_MODULE_MANAGER_KEY_','view-templates');
+// Module Manager integration
+require WPV_PATH_EMBEDDED . '/inc/wpv-module-manager.php';
 
 if (!defined('EDITOR_ADDON_RELPATH')) {
     define('EDITOR_ADDON_RELPATH', WPV_URL . '/embedded/common/visual-editor');
@@ -27,11 +31,15 @@ if (!defined('EDITOR_ADDON_RELPATH')) {
 
 require WPV_PATH . '/inc/constants.php';
 require WPV_PATH . '/inc/wpv-admin-messages.php';
+require WPV_PATH_EMBEDDED . '/inc/functions-core-embedded.php';
 require WPV_PATH . '/inc/functions-core.php';
 require WPV_PATH . '/inc/wpv-admin-ajax.php';
 require WPV_PATH . '/inc/wpv-admin-ajax-layout-wizard.php';
 if ( !function_exists( 'wplogger' ) ) {
 	require_once(WPV_PATH_EMBEDDED) . '/common/wplogger.php';
+}
+if ( !function_exists( 'wpv_debuger' ) ) { 
+	require_once(WPV_PATH_EMBEDDED) . '/inc/wpv-query-debug.class.php';
 }
 require_once(WPV_PATH_EMBEDDED) . '/common/wp-pointer.php'; // NOTE I think we do not need pointers anymore
 
@@ -39,6 +47,7 @@ $wpv_wp_pointer = new WPV_wp_pointer('views');
 
 require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes-in-shortcodes.php';
+require WPV_PATH_EMBEDDED . '/inc/wpv-shortcodes-gui.php';
 require WPV_PATH_EMBEDDED . '/inc/wpv-filter-meta-html-embedded.php';
 
 require WPV_PATH_EMBEDDED . '/inc/wpv-widgets.php';
@@ -70,6 +79,12 @@ require_once( WPV_PATH_EMBEDDED . '/inc/wpv-filter-post-relationship-embedded.ph
 require_once( WPV_PATH . '/inc/filters/wpv-filter-post-relationship.php');
 require_once( WPV_PATH_EMBEDDED . '/inc/wpv-filter-id-embedded.php');
 require_once( WPV_PATH . '/inc/filters/wpv-filter-id.php');
+//Filters for users. 
+require_once( WPV_PATH_EMBEDDED . '/inc/wpv-filter-users-embedded.php');
+require_once( WPV_PATH . '/inc/filters/wpv-filter-users.php');
+require_once( WPV_PATH_EMBEDDED . '/inc/wpv-filter-usermeta-field-embedded.php');
+require_once( WPV_PATH . '/inc/filters/wpv-filter-user-field.php');
+
 
 require WPV_PATH . '/inc/wpv-plugin.class.php';
 

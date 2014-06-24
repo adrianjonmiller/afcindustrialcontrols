@@ -287,6 +287,7 @@ jQuery(document).on('click', '.js-filter-list .js-wpv-filter-custom-field-edit-o
 			var update_message = jQuery(this).data('success');
 			var unsaved_message = jQuery(this).data('unsaved');
 			var nonce = jQuery(this).data('nonce');
+			wpv_filter_custom_field_selected = jQuery('.js-filter-list .js-filter-custom-field input, .js-filter-list .js-filter-custom-field select').serialize();
 			var wpv_custom_fields_values = {};
 			jQuery('.js-filter-list .js-filter-custom-field .js-filter-row-multiple-element').each(function() {
 				var wpv_custom_field = "custom-field-" + jQuery(this).data('field');
@@ -317,6 +318,7 @@ jQuery(document).on('click', '.js-filter-list .js-wpv-filter-custom-field-edit-o
 							jQuery('.js-filter-list .js-wpv-filter-custom-field-summary .updated').fadeOut('fast');
 						}, 2000);
 						wpv_close_filter_row('.js-filter-list .js-filter-custom-field');
+						wpv_update_parametric_search_section();
 					} else {
 						console.log( "Error: WordPress AJAX returned " + response );
 					}

@@ -24,6 +24,7 @@ jQuery(document).ready(function(){
 var view_settings = [];
 view_settings['.js-wpv-title'] = jQuery('.js-title').val();
 view_settings['.js-wpv-description'] = jQuery('.js-wpv-description').val();
+view_settings['.js-wpv-slug'] = jQuery('.js-wpv-slug').val();
 view_settings['.js-wpv-layout-settings-extra-js'] = jQuery('.js-wpv-layout-settings-extra-js').val();
 view_settings['.js-wpv-loop-selection'] = jQuery('.js-loop-selection-form').serialize();
 
@@ -38,9 +39,9 @@ codemirror_views_content_val = codemirror_views_content.getValue();
 
 // Description update
 
-jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title', function(){
+jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title, .js-wpv-slug', function(){
 	jQuery('.js-wpv-title-description-update').parent().find('.toolset-alert-error').remove();
-	if (view_settings['.js-wpv-description'] != jQuery('.js-wpv-description').val() || view_settings['.js-wpv-title'] != jQuery('.js-title').val()) {
+	if (view_settings['.js-wpv-description'] != jQuery('.js-wpv-description').val() || view_settings['.js-wpv-title'] != jQuery('.js-title').val() || view_settings['.js-wpv-slug'] != jQuery('.js-wpv-slug').val()) {
 		jQuery('.js-wpv-title-description-update').prop('disabled', false).removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved');
 		setConfirmUnload(true);
 	} else {
@@ -53,10 +54,6 @@ jQuery(document).on('keyup input cut paste', '.js-wpv-description, .js-title', f
 
 jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 	e.preventDefault();
-	var view_settings_temp = [];
-	view_settings_temp['.js-wpv-title'] = view_settings['.js-wpv-title'];
-	view_settings['.js-wpv-description'] = jQuery('.js-wpv-description').val();
-	view_settings['.js-wpv-title'] = jQuery('.js-title').val();
 	var update_message = jQuery(this).data('success'),
 		unsaved_message = jQuery(this).data('unsaved'),
 		nonce = jQuery(this).data('nonce'),
@@ -67,8 +64,9 @@ jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 	var data = {
 		action: 'wpv_update_title_description',
 		id: data_view_id,
-		description: view_settings['.js-wpv-description'],
-		title: view_settings['.js-wpv-title'],
+		description: jQuery('.js-wpv-description').val(),
+		title: jQuery('.js-title').val(),
+		slug: jQuery('.js-wpv-slug').val(),
 		wpnonce: nonce
 	};
 	jQuery.ajax({
@@ -86,12 +84,14 @@ jQuery(document).on('click', '.js-wpv-title-description-update', function(e){
 					inline:true,
 					stay:true
 				});
-				view_settings['.js-wpv-title'] = view_settings_temp['.js-wpv-title'];
 				return false;
 			}
 			// If all is fine, response is post_ID
 			if ( (typeof(response) !== 'undefined') && (response === data.id)) {
 				jQuery('.js-wpv-title-description-update').removeClass('js-wpv-section-unsaved');
+				view_settings['.js-wpv-description'] = jQuery('.js-wpv-description').val();
+				view_settings['.js-wpv-title'] = jQuery('.js-title').val();
+				view_settings['.js-wpv-slug'] = jQuery('.js-wpv-slug').val();
 				if (jQuery('.js-wpv-section-unsaved').length < 1) {
 					setConfirmUnload(false);
 				}
@@ -165,7 +165,9 @@ jQuery(document).on('click', '.js-wpv-loop-selection-update', function(e){
 		url:ajaxurl,
 		data:data,
 		success:function(response){
-			if ( (typeof(response) !== 'undefined') && (response === data.id)) {
+			decoded_response = jQuery.parseJSON(response);
+			if ( decoded_response.success === data.id ) {
+				jQuery('.js-loop-selection-form').html(decoded_response.wpv_settings_archive_loops);
 				jQuery('.js-wpv-loop-selection-update').removeClass('js-wpv-section-unsaved');
 				if (jQuery('.js-wpv-section-unsaved').length < 1) {
 					setConfirmUnload(false);

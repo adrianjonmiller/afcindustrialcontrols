@@ -53,29 +53,23 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 				<input type="hidden" class="js-pagination-zero" name="pagination[]" value="<?php echo $view_settings['pagination'][0]; ?>" />
 				<ul>
 					<li>
-						<p>
-							<?php $checked = $view_settings['pagination'][0]=='disable' ? ' checked="checked"' : ''; ?>
-							<input type="radio" id="wpv-settings-no-pagination" name="pagination[mode]" value="none"<?php echo $checked; ?> />
-							<label for="wpv-settings-no-pagination"><strong><?php _e('No pagination','wpv-views') ?></strong> - <?php _e('All query results will display.','wpv-views') ?></label>
-						</p>
+						<?php $checked = $view_settings['pagination'][0]=='disable' ? ' checked="checked"' : ''; ?>
+						<input type="radio" id="wpv-settings-no-pagination" name="pagination[mode]" value="none"<?php echo $checked; ?> />
+						<label for="wpv-settings-no-pagination"><strong><?php _e('No pagination','wpv-views') ?></strong> - <?php _e('All query results will display.','wpv-views') ?></label>
 					</li>
 					<li>
-						<p>
-							<?php $checked = ( $view_settings['pagination'][0]=='enable' && $view_settings['pagination']['mode']=='paged' ) ? ' checked="checked"' : ''; ?>
-							<input type="radio" id="wpv-settings-manual-pagination" name="pagination[mode]" value="paged"<?php echo $checked; ?> />
-							<label for="wpv-settings-manual-pagination"><strong><?php _e( 'Pagination enabled with manual transition', 'wpv-views' ) ?></strong> - <?php _e( 'The query results will display in pages, which visitors will switch.', 'wpv-views' ) ?></label>
-						</p>
+						<?php $checked = ( $view_settings['pagination'][0]=='enable' && $view_settings['pagination']['mode']=='paged' ) ? ' checked="checked"' : ''; ?>
+						<input type="radio" id="wpv-settings-manual-pagination" name="pagination[mode]" value="paged"<?php echo $checked; ?> />
+						<label for="wpv-settings-manual-pagination"><strong><?php _e( 'Pagination enabled with manual transition', 'wpv-views' ) ?></strong> - <?php _e( 'The query results will display in pages, which visitors will switch.', 'wpv-views' ) ?></label>
 					</li>
 					<li>
-						<p>
-							<?php $checked = $view_settings['pagination']['mode']=='rollover' ? ' checked="checked"' : ''; ?>
-							<input type="radio" id="wpv-settings-ajax-pagination" name="pagination[mode]" value="rollover"<?php echo $checked; ?> />
-							<label for="wpv-settings-ajax-pagination"><strong><?php _e( 'Pagination enabled with automatic transition', 'wpv-views' ) ?></strong> - <?php _e( 'The query results will display in pages, which will switch automatically (good for sliders).', 'wpv-views' ) ?></label>
-						</p>
+						<?php $checked = $view_settings['pagination']['mode']=='rollover' ? ' checked="checked"' : ''; ?>
+						<input type="radio" id="wpv-settings-ajax-pagination" name="pagination[mode]" value="rollover"<?php echo $checked; ?> />
+						<label for="wpv-settings-ajax-pagination"><strong><?php _e( 'Pagination enabled with automatic transition', 'wpv-views' ) ?></strong> - <?php _e( 'The query results will display in pages, which will switch automatically (good for sliders).', 'wpv-views' ) ?></label>
 					</li>
 				</ul>
 
-				<div class="wpv-pagination-options-box">
+				<div class="wpv-setting-options-box wpv-pagination-options-box">
 
 					<h3 class="wpv-pagination-paged"><?php _e('Options for manual pagination','wpv-views'); ?></h3>
 					<ul class="wpv-pagination-paged">
@@ -103,7 +97,7 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 						</li>
 					</ul>
 
-					<ul class="wpv-pagination-paged-ajax">
+					<ul class="wpv-pagination-paged-ajax" style="margin-bottom:0;">
 						<li>
 							<p>
 								<label><?php _e('Transition effect:', 'wpv-views')?></label>
@@ -126,10 +120,10 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 								<span class="duration-error" style="color:red;display:none;">&larr; <?php _e('Please add a numeric value', 'wpv-views'); ?></span>
 							</p>
 							<p>
-								<button class="js-pagination-advanced button-secondary" type="button" data-closed="<?php _e( 'Advanced options', 'wpv-views' ) ?>" data-opened="<?php _e( 'Close advanced options', 'wpv-views' ) ?>" data-section="ajax_pagination" data-state="closed"><?php _e( 'Advanced options', 'wpv-views' ) ?></button>
+								<button class="js-pagination-advanced button-secondary" type="button" data-closed="<?php echo esc_attr( __( 'Advanced options', 'wpv-views' ) ); ?>" data-opened="<?php echo esc_attr( __( 'Close advanced options', 'wpv-views' ) ); ?>" data-section="ajax_pagination" data-state="closed"><?php _e( 'Advanced options', 'wpv-views' ); ?></button>
 							</p>
 						</li>
-						<li class="wpv-pagination-advanced">
+						<li class="wpv-pagination-advanced wpv-advanced-setting hidden" style="padding-top:10px;">
 							<?php $checked = (isset($view_settings['pagination']['preload_images']) && $view_settings['pagination']['preload_images']) ? ' checked="checked"' : '';?>
 							<label>
 								<input type="checkbox" name="pagination[preload_images]" value="1"<?php echo $checked; ?> />
@@ -139,7 +133,7 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 					</ul>
 
 					<h3 class="wpv-pagination-rollover"><?php _e('Options for automatic pagination', 'wpv-views')?></h3>
-					<ul class="wpv-pagination-rollover">
+					<ul class="wpv-pagination-rollover" style="margin-bottom:0;">
 						<li>
 							<label for="rollover[posts_per_page]"><?php _e('Number of items per page:', 'wpv-views'); ?></label>
 							<select name="rollover[posts_per_page]">
@@ -185,7 +179,7 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 								<button class="js-pagination-advanced button-secondary" type="button" data-closed="<?php _e( 'Advanced options', 'wpv-views' ) ?>" data-opened="<?php _e( 'Close advanced options', 'wpv-views' ) ?>" data-section="rollover" data-state="closed"><?php _e( 'Advanced options', 'wpv-views' ) ?></button>
 							</p>
 						</li>
-						<li class="wpv-pagination-advanced">
+						<li class="wpv-pagination-advanced wpv-advanced-setting hidden" style="padding-top:10px;">
 							<?php $checked = (isset($view_settings['rollover']['preload_images']) && $view_settings['rollover']['preload_images']) ? ' checked="checked"' : '';?>
 							<label>
 								<input type="checkbox" name="rollover[preload_images]" value="1"<?php echo $checked; ?> />
@@ -194,7 +188,7 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 						</li>
 					</ul>
 
-					<ul class="wpv-pagination-paged wpv-pagination-rollover wpv-pagination-shared wpv-pagination-advanced">
+					<ul class="wpv-pagination-paged wpv-pagination-rollover wpv-pagination-shared wpv-pagination-advanced wpv-advanced-setting hidden" style="padding-bottom:10px;">
 						<li>
 							<?php $checked = (isset($view_settings['pagination']['cache_pages']) && $view_settings['pagination']['cache_pages']) ? ' checked="checked"' : '';?>
 							<p>
@@ -266,9 +260,9 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 							</p>
 
 							<p id="wpv-spinner-uploaded" class="wpv-spinner-selection">
-								<input id="wpv-pagination-spinner-image" class="js-wpv-pagination-spinner-image" type="textfield" name="pagination[spinner_image_uploaded]" value="<?php echo isset( $view_settings['pagination']['spinner_image_uploaded'] ) ? $view_settings['pagination']['spinner_image_uploaded'] : ''; ?>" />
+								<input id="wpv-pagination-spinner-image" class="js-wpv-pagination-spinner-image" type="text" name="pagination[spinner_image_uploaded]" value="<?php echo isset( $view_settings['pagination']['spinner_image_uploaded'] ) ? $view_settings['pagination']['spinner_image_uploaded'] : ''; ?>" />
 								<button class="button-secondary js-code-editor-toolbar-button js-wpv-media-manager" data-content="wpv-pagination-spinner-image" data-id="<?php echo $view_id; ?>"><?php _e('Upload Image', 'wpv-views'); ?></button>
-								<?php if ( isset( $view_settings['pagination']['spinner_image_uploaded'] ) ): ?>
+								<?php if ( isset( $view_settings['pagination']['spinner_image_uploaded'] ) && !empty( $view_settings['pagination']['spinner_image_uploaded'] ) ): ?>
 									<img id="wpv-pagination-spinner-image-preview" class="js-wpv-pagination-spinner-image-preview" src="<?php echo $view_settings['pagination']['spinner_image_uploaded']; ?>" height="16" />
 								<?php endif; ?>
 							</p>
@@ -280,7 +274,10 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 									<?php _e('No spinner graphics', 'wpv-views'); ?>
 								</label>
 							</p>
-
+						</li>
+						<li>
+							<h4><?php _e('Callback function', 'wpv-views'); ?></h4>
+							<p><?php _e('Javascript function to execute after the pagination transition has been completed:', 'wpv-views'); ?> <input id="wpv-pagination-callback-next" class="js-wpv-pagination-callback-next" type="text" name="pagination[callback_next]" value="<?php echo isset( $view_settings['pagination']['callback_next'] ) ? $view_settings['pagination']['callback_next'] : ''; ?>" /></p>
 						</li>
 					</ul>
 				</div> <!-- .ggwpv-pagination-options-box -->
@@ -393,3 +390,34 @@ function add_view_pagination($view_settings, $view_id) { //TODO review that defa
 
 	</div>
 <?php }
+
+/**
+* wpv_pagination_summary_filter
+*
+* Returns the pagination part when building the summary for a View
+*
+* @param $summary
+* @param $post_id
+* @param $view_settings
+*
+* @returns (string) $summary
+*
+* @since unknown
+*/
+
+add_filter( 'wpv-view-get-content-summary', 'wpv_pagination_summary_filter', 6, 3 );
+
+function wpv_pagination_summary_filter($summary, $post_id, $view_settings) {
+	if ( isset( $view_settings['pagination'] ) && isset( $view_settings['pagination'][0] ) && $view_settings['pagination'][0] != 'disable' ) {
+		if ( isset( $view_settings['pagination']['mode'] ) && $view_settings['pagination']['mode'] == 'paged' ) {
+			if ( isset( $view_settings['ajax_pagination'] ) && isset( $view_settings['ajax_pagination'][0] ) && $view_settings['ajax_pagination'][0] == 'enable' ) {
+				$summary .= ', ' . sprintf( _n( '1 item per page with manual AJAX', '%s items per page with manual AJAX', $view_settings['posts_per_page'], 'wpv-views' ), $view_settings['posts_per_page'] );
+			} else {
+				$summary .= ', ' . sprintf( _n( '1 item per page', '%s items per page', $view_settings['posts_per_page'], 'wpv-views' ), $view_settings['posts_per_page'] );
+			}
+		} else if ( isset( $view_settings['pagination']['mode'] ) && $view_settings['pagination']['mode'] == 'rollover' && isset( $view_settings['rollover'] ) && isset( $view_settings['rollover']['posts_per_page'] ) ) {
+			$summary .= ', ' . sprintf( _n( '1 item per page with automatic AJAX', '%s items per page with automatic AJAX', $view_settings['rollover']['posts_per_page'], 'wpv-views' ), $view_settings['rollover']['posts_per_page'] );
+		}
+	}
+    return $summary;
+}

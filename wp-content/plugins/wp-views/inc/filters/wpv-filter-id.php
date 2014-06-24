@@ -44,18 +44,67 @@ if(is_admin()){
 	* Render ID filter item content in the filters list
 	*/
 
-	function wpv_get_list_item_ui_post_id($selected, $view_settings = null) {
+	function wpv_get_list_item_ui_post_id( $selected, $view_settings = null ) {
+		global $wpdb;
 
-		if (isset($view_settings['id_mode']) && is_array($view_settings['id_mode'])) {
+		if ( isset( $view_settings['id_mode'] ) && is_array( $view_settings['id_mode'] ) ) {
 			$view_settings['id_mode'] = $view_settings['id_mode'][0];
 		}
-
+		
+		if ( function_exists('icl_object_id') && isset( $view_settings['post_id_ids_list'] ) && !empty( $view_settings['post_id_ids_list'] ) ) {
+			// Adjust for WPML support
+			$id_ids_list = array_map( 'trim', explode( ',', $view_settings['post_id_ids_list'] ) );
+			$trans_ids = array();
+			foreach ( $id_ids_list as $id_item ) {
+				if ( !empty( $id_item ) ) {
+					$target_post_type = $wpdb->get_var("SELECT post_type FROM {$wpdb->posts} WHERE ID='{$id_item}'");
+					if ( $target_post_type ) {
+						$trans_ids[] = icl_object_id( $id_item, $target_post_type, true );
+					}
+				}
+			}
+			if ( count( $trans_ids ) > 0 ) {
+				$view_settings['post_id_ids_list'] = implode( ",", $trans_ids );
+			}
+			
+		}
+		
+		ob_start();
+		?>
+		<p class='wpv-filter-id-edit-summary js-wpv-filter-summary js-wpv-filter-id-summary'>
+			<?php echo wpv_get_filter_id_summary_txt( $view_settings ); ?>
+		</p>
+		<p class='edit-filter js-wpv-filter-edit-controls'>
+			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-id-edit-open' title='<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>'></i>
+			<i class='button-secondary icon-trash icon-large js-filter-remove' title='<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_id_delete_nonce' ); ?>'></i>
+		</p>
+		<div id="wpv-filter-id-edit" class="wpv-filter-edit js-wpv-filter-edit">
+			<fieldset>
+				<p><strong><?php echo __('Post Ids', 'wpv-views'); ?>:</strong></p>
+				<div id="wpv-filter-id" class="js-filter-id-list">
+					<?php wpv_render_id_options( array( 'mode' => 'edit', 'view_settings' => $view_settings ) ); ?>
+				</div>
+			</fieldset>
+			<p>
+				<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-id-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_id_nonce' ); ?>" />
+			</p>
+			<p class="wpv-custom-fields-help">
+				<?php echo sprintf(__('%sLearn about filtering by Post ID%s', 'wpv-views'),
+					'<a class="wpv-help-link" href="' . WPV_FILTER_BY_POST_ID_LINK . '" target="_blank">',
+					' &raquo;</a>'
+				); ?>
+			</p>
+		</div>
+		<?php
+		$res = ob_get_clean();
+		return $res;
+		/*
 		ob_start();
 		wpv_render_id_options(array('mode' => 'edit', 'view_settings' => $view_settings));
 		$data = ob_get_clean();
 		$td = "<p class='wpv-filter-id-edit-summary js-wpv-filter-summary js-wpv-filter-id-summary'>\n";
 		$td .= wpv_get_filter_id_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary js-wpv-filter-edit-open js-wpv-filter-id-edit-open'>". __('Edit','wpv-views') ."</button>\n<i class='icon-remove-sign js-filter-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_id_delete_nonce' ) . "'></i>\n</p>";
+		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-id-edit-open' title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_id_delete_nonce' ) . "'></i>\n</p>";
 		$td .= "<div id=\"wpv-filter-id-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
 		$td .= '<fieldset>';
 		$td .= '<p><strong>' . __('Post Ids', 'wpv-views') . ':</strong></p>';
@@ -77,6 +126,7 @@ if(is_admin()){
 		$td .= '</div>';
 
 		return $td;
+		*/
 	}
 	
 	/**
@@ -97,6 +147,10 @@ if(is_admin()){
 		$view_array = get_post_meta($_POST["id"], '_wpv_settings', true);
 		if ( !isset( $filter_id['post_id_ids_list'] ) || '' == $filter_id['post_id_ids_list'] ) {
 			$filter_id['post_id_ids_list'] = '';
+		}
+		if ( !isset( $view_array['id_in_or_out'] ) || $filter_id['id_in_or_out'] != $view_array['id_in_or_out'] ) {
+			$change = true;
+			$view_array['id_in_or_out'] = $filter_id['id_in_or_out'];
 		}
 		if ( !isset( $view_array['id_mode'] ) || $filter_id['id_mode'] != $view_array['id_mode'] ) {
 			$change = true;
@@ -148,6 +202,9 @@ if(is_admin()){
 		$nonce = $_POST["wpnonce"];
 		if (! wp_verify_nonce($nonce, 'wpv_view_filter_id_delete_nonce') ) die("Security check");
 		$view_array = get_post_meta($_POST["id"], '_wpv_settings', true);
+		if ( isset( $view_array['id_in_or_out'] ) ) {
+			unset( $view_array['id_in_or_out'] );
+		}
 		if ( isset( $view_array['id_mode'] ) ) {
 			unset( $view_array['id_mode'] );
 		}
@@ -195,39 +252,42 @@ if(is_admin()){
 function wpv_render_id_options($args) {
 	global $wpdb;
 
-	$edit = isset($args['mode']) && $args['mode'] == 'edit';
-
 	$view_settings = isset($args['view_settings']) ? $args['view_settings'] : array();
 
-	$defaults = array('id_mode' => 'by_ids',
+	$defaults = array('id_in_or_out' => 'in',
+			  'id_mode' => 'by_ids',
 			  'post_id_ids_list' =>'',
 			  'post_ids_url' => 'post_ids',
 			  'post_ids_shortcode' => 'ids');
 	$view_settings = wp_parse_args($view_settings, $defaults);
 
 	    ?>
+	    <p>
+			<label for="id_in_or_out"><?php _e('The View will filter posts to', 'wpv-views'); ?></label>
+			<select id="id_in_or_out" name="id_in_or_out" class="js_id_in_or_out">
+				<option value="in"<?php if ( 'in' == $view_settings['id_in_or_out'] ) echo ' selected="selected"'; ?>><?php _e('include', 'wpv-views'); ?></option>
+				<option value="out"<?php if ( 'out' == $view_settings['id_in_or_out'] ) echo ' selected="selected"'; ?>><?php _e('exclude', 'wpv-views'); ?></option>
+			</select>
+		</p>
 	    <ul>
-        <?php if ($edit): // only one instance of this filter by view ?>
-			<input type="hidden" name="_wpv_settings[post_id]" value="1"/>
-		<?php endif; ?>
 		<li>
 		    <?php $checked = $view_settings['id_mode'] == 'by_ids' ? 'checked="checked"' : ''; ?>
 		    <label><input type="radio" name="id_mode[]" value="by_ids" <?php echo $checked; ?> />
-            	&nbsp;<?php _e('One of these IDs ', 'wpv-views'); ?></label>
+            	&nbsp;<?php _e('Posts with those IDs: ', 'wpv-views'); ?></label>
 		    <input type='text' name="post_id_ids_list" value="<?php echo esc_attr($view_settings['post_id_ids_list']); ?>" size="15" />
 		</li>
 
         <li>
 		    <?php $checked = $view_settings['id_mode'] == 'by_url' ? 'checked="checked"' : ''; ?>
 		    <label><input type="radio" name="id_mode[]" value="by_url" <?php echo $checked; ?>>&nbsp;
-				<?php _e('Value set by this URL parameter: ', 'wpv-views'); ?></label>
+				<?php _e('Posts with IDs set by this URL parameter: ', 'wpv-views'); ?></label>
 		    <input type='text' class="js-wpv-filter-id-url js-wpv-filter-validate" data-type="url" data-class="js-wpv-filter-id-url" name="post_ids_url" value="<?php echo $view_settings['post_ids_url']; ?>" size="10" />
 		</li>
 
         <li>
 		    <?php $checked = $view_settings['id_mode'] == 'shortcode' ? 'checked="checked"' : ''; ?>
 		    <label><input type="radio" name="id_mode[]" value="shortcode" <?php echo $checked; ?>>&nbsp;
-			<?php _e('Value set by View shortcode attribute: ', 'wpv-views'); ?></label>
+			<?php _e('Posts with IDs set by the View shortcode attribute: ', 'wpv-views'); ?></label>
 		    <input type='text' class="js-wpv-filter-id-shortcode js-wpv-filter-validate" data-type="shortcode" data-class="js-wpv-filter-id-shortcode" name="post_ids_shortcode" value="<?php echo $view_settings['post_ids_shortcode']; ?>" size="10" />
 		</li>
 
@@ -245,7 +305,24 @@ function wpv_render_id_options($args) {
 function wpv_get_filter_id_summary_txt($view_settings, $short=false) {
 	global $wpdb;
 	if (isset($_GET['post'])) {$view_name = get_the_title( $_GET['post']);} else {$view_name = 'view-name';}
+	
+	$defaults = array('id_in_or_out' => 'in',
+			  'id_mode' => 'by_ids',
+			  'post_id_ids_list' =>'',
+			  'post_ids_url' => 'post_ids',
+			  'post_ids_shortcode' => 'ids');
+	$view_settings = wp_parse_args($view_settings, $defaults);
+	
 	ob_start();
+	
+	switch ($view_settings['id_in_or_out']) {
+		case 'in':
+			echo __('Include only posts ', 'wpv-views');
+			break;
+		case 'out':
+			echo __('Exclude posts ', 'wpv-views');
+			break;
+	}
 
 	switch ($view_settings['id_mode']) {
 
@@ -255,7 +332,7 @@ function wpv_get_filter_id_summary_txt($view_settings, $short=false) {
 			} else {
 			$ids_list = '<i>' . __('None set', 'wpv-views') . '</i>';
 			}
-			echo sprintf(__('Select posts with the listed <strong>IDs</strong>: %s', 'wpv-views'), $ids_list);
+			echo sprintf(__('with the following <strong>IDs</strong>: %s', 'wpv-views'), $ids_list);
 			break;
 		case 'by_url':
 			if (isset($view_settings['post_ids_url']) && '' != $view_settings['post_ids_url']){
@@ -264,7 +341,7 @@ function wpv_get_filter_id_summary_txt($view_settings, $short=false) {
 			$url_ids = '<i>' . __('None set', 'wpv-views') . '</i>';
 			}
 
-			echo sprintf(__('Select posts with the IDs determined by the URL parameter <strong>"%s"</strong>', 'wpv-views'), $url_ids);
+			echo sprintf(__('with IDs determined by the URL parameter <strong>"%s"</strong>', 'wpv-views'), $url_ids);
 			echo sprintf(__(' eg. yoursite/page-with-this-view/?<strong>%s</strong>=1', 'wpv-views'), $url_ids);
 			break;
 		case 'shortcode':
@@ -273,7 +350,7 @@ function wpv_get_filter_id_summary_txt($view_settings, $short=false) {
 			} else {
 			$id_short = 'None';
 			}
-			echo sprintf(__('Select posts which IDs is set by the View shortcode attribute <strong>"%s"</strong>', 'wpv-views'), $id_short);
+			echo sprintf(__('which IDs is set by the View shortcode attribute <strong>"%s"</strong>', 'wpv-views'), $id_short);
 			echo sprintf(__(' eg. [wpv-view name="%s" <strong>%s</strong>="1"]', 'wpv-views'), $view_name, $id_short);
 
 			break;

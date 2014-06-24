@@ -143,7 +143,11 @@ jQuery(document).ready(function($) {
 	
 	$('#posts-filter').submit(function(e) {
 		e.preventDefault();
-		navigateWithURIParams(decodeURIParams($(this).serialize()));
+		var url_params = decodeURIParams($(this).serialize());
+		if (typeof(url_params['search']) !== 'undefined' && url_params['search'] == '') {
+			url_params['search'] = null;
+		}
+		navigateWithURIParams(url_params);
 		
 		return false;
 	});
@@ -152,6 +156,7 @@ jQuery(document).ready(function($) {
 	
 	$(document).on('change','.js-list-views-action', function () {
 		var data_view_id = $(this).data('view-id');
+		var view_listing_action_nonce = $(this).data('viewactionnonce');
 		
 		if($(this).val() === 'delete') {
 			$.colorbox({
@@ -192,12 +197,126 @@ jQuery(document).ready(function($) {
 	     }
 		});
 	}
+	
+	// If action is trash, move to trash and reload the page
+	
+	else if ( $(this).val() === 'trash' ) {
+		$(this).parents('.js-wpv-view-list-row').find('h3').append(' <div class="spinner ajax-loader"></div>');
+		$('.subsubsub').append('<div class="spinner ajax-loader"></div>');
+		var data = {
+			action: 'wpv_view_change_status',
+			id: data_view_id,
+			newstatus: 'trash',
+			wpnonce : view_listing_action_nonce
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+						if ( $('.js-wpv-view-list-row').length == 1) {
+							url_params['paged'] = ( url_params['paged'] - 1 );
+						}
+					}
+					url_params['trashed'] = response;
+					navigateWithURIParams(url_params);
+				} else {
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+				 
+	}
+	
+	else if ( $(this).val() === 'restore-from-trash' ) {
+		$(this).parents('.js-wpv-view-list-row').find('h3').append(' <div class="spinner ajax-loader"></div>');
+		$('.subsubsub').append('<div class="spinner ajax-loader"></div>');
+		var data = {
+			action: 'wpv_view_change_status',
+			id: data_view_id,
+			newstatus: 'publish',
+			wpnonce : view_listing_action_nonce
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+						if ( $('.js-wpv-view-list-row').length == 1) {
+							url_params['paged'] = ( url_params['paged'] - 1 );
+						}
+					}
+					url_params['untrashed'] = 1;
+					navigateWithURIParams(url_params);
+				} else {
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+				 
+	}
 
 	$('.js-list-views-action').val('0');
 	$('#list_views_action_'+data_view_id).val($('#list_views_action_'+data_view_id+' option:first').val());
 	
 	$('.js-list-views-action:selected').removeAttr('selected');
 
+	});
+	
+	// Untrash action
+	
+	$(document).on('click', '.js-wpv-untrash', function(e){
+		e.preventDefault();
+		var spinnerContainer = $('<div class="spinner ajax-loader">').insertAfter($(this)).show();
+		var data = {
+			action: 'wpv_view_change_status',
+			id: $(this).data('id'),
+			newstatus: 'publish',
+			wpnonce : $(this).data('nonce')
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					url_params['untrashed'] = 1;
+					navigateWithURIParams(url_params);
+				} else {
+					spinnerContainer.remove();
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				spinnerContainer.remove();
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
 	});
 
 	// Delete action
@@ -432,6 +551,9 @@ jQuery(document).ready(function($) {
 				result[key] = true;
 			}
 		}
+		result['untrashed'] = null;
+		result['trashed'] = null;
+		result['deleted'] = null;
 		return result;
 	}
 	

@@ -26,9 +26,7 @@ if( !defined('WPV_MESSAGE_SPACE_CHAR') ) define('WPV_MESSAGE_SPACE_CHAR', '&nbsp
 * @return echo the main help boxes for the Query section
 *
 * @link
-* 	- Browse all Views how-to tutorials
 */
-if( !defined('WPV_LINK_BROWSE_ALL_TUTORIALS') ) define('WPV_LINK_BROWSE_ALL_TUTORIALS', 'http://wp-types.com/documentation/user-guides/getting-started-with-views/');
 /**
 *	- Creating paginated listings with Views
 */
@@ -52,8 +50,6 @@ function wpv_get_view_introduction_data() {
 						. __('A basic query selects all items of a chosen type.', 'wpv-views') . '</p>'
 						. '<ul><li>' . __('You can refine the selection by adding filters.', 'wpv-views') . '</li>'
 						. '<li>' . __('At the bottom of this page you will find the Layout section, where you control the output.', 'wpv-views') . '</li></ul>',
-		'link-text'		=> htmlentities( __('Browse all Views how-to tutorials', 'wpv-views'), ENT_QUOTES ),
-		'link-url'		=> WPV_LINK_BROWSE_ALL_TUTORIALS,
 		'close'			=> 'true',
 		'hidden'		=> 'true',
 		'classname'		=> 'js-metasection-help-query js-for-view-purpose-all'
@@ -68,8 +64,6 @@ function wpv_get_view_introduction_data() {
 						. '<li>' . __('At the bottom of this page you will find the Layout section, where you control the output.', 'wpv-views') . '</li></ul>',
 		'tutorial-button-text'	=> htmlentities( __('Creating paginated listings with Views', 'wpv-views'), ENT_QUOTES ),
 		'tutorial-button-url'	=> WPV_LINK_CREATE_PAGINATED_LISTINGS,
-		'link-text'		=> htmlentities( __('Browse all Views how-to tutorials', 'wpv-views'), ENT_QUOTES ),
-		'link-url'		=> WPV_LINK_BROWSE_ALL_TUTORIALS,
 		'close'			=> 'true',
 		'hidden'		=> 'true',
 		'classname'		=> 'js-metasection-help-query js-for-view-purpose-pagination'
@@ -84,8 +78,6 @@ function wpv_get_view_introduction_data() {
 						. '<li>' . __('At the bottom of this page you will find a slide Content Template, where you design slides.', 'wpv-views') . '</li></ul>',
 		'tutorial-button-text'	=> htmlentities( __('Creating sliders with Views', 'wpv-views'),ENT_QUOTES ),
 		'tutorial-button-url'	=> WPV_LINK_CREATE_SLIDERS,
-		'link-text'		=> htmlentities( __('Browse all Views how-to tutorials', 'wpv-views'), ENT_QUOTES ),
-		'link-url'		=> WPV_LINK_BROWSE_ALL_TUTORIALS,
 		'close'			=> 'true',
 		'hidden'		=> 'true',
 		'classname'		=> 'js-metasection-help-query js-for-view-purpose-slider'
@@ -100,8 +92,6 @@ function wpv_get_view_introduction_data() {
 						. '<li>' . __('At the bottom of this page you will find the Layout section, where you control the output.', 'wpv-views') . '</li></ul>',
 		'tutorial-button-text'	=> htmlentities( __('Creating parametric searches with Views', 'wpv-views'), ENT_QUOTES ),
 		'tutorial-button-url'	=> WPV_LINK_CREATE_PARAMETRIC_SEARCH,
-		'link-text'		=> htmlentities( __('Browse all Views how-to tutorials', 'wpv-views'), ENT_QUOTES ),
-		'link-url'		=> WPV_LINK_BROWSE_ALL_TUTORIALS,
 		'close'			=> 'true',
 		'hidden'		=> 'true',
 		'classname'		=> 'js-metasection-help-query js-for-view-purpose-parametric'
@@ -114,8 +104,6 @@ function wpv_get_view_introduction_data() {
 						. '<ul><li>' . __('You can refine the selection by adding filters.','wpv-views') . '</li>'
 						. '<li>' . __('The Front-end filter section lets you add pagination, slider controls and parametric search to the View.', 'wpv-views') . '</li>'
 						. '<li>' .  __('At the bottom of this page you will find the Layout section, where you control the output.', 'wpv-views') . '</li></ul>',
-		'link-text'		=> htmlentities( __('Browse all Views how-to tutorials', 'wpv-views'),ENT_QUOTES ),
-		'link-url'		=> WPV_LINK_BROWSE_ALL_TUTORIALS,
 		'close'			=> 'true',
 		'hidden'		=> 'true',
 		'classname'		=> 'js-metasection-help-query js-for-view-purpose-full'
@@ -176,7 +164,8 @@ function wpv_get_view_filter_introduction_data() {
 						. __('Select how many results to show in each page and how pages transition.', 'wpv-views') . '</li>'
 						. '<li>' . __('The second part of this section lets you design the pagination controls that would appear on the page for visitors.', 'wpv-views') . WPV_MESSAGE_SPACE_CHAR
 						. __('The toolbar above the HTML editor includes buttons for inserting various controls.', 'wpv-views') . '</li>'
-						. '<li>' . __('Besides pagination and slider transition controls, you can also insert parametric search filters and content search controls.', 'wpv-views') . '</li></ul>',
+						. '<li>' . __('Besides pagination and slider transition controls, you can also insert parametric search filters and content search controls.', 'wpv-views') . '</li></ul>'
+						. '<p><a href="' . WPV_LINK_CREATE_PARAMETRIC_SEARCH . '" target="_blank">' . __('Learn how to create parametric searches with Views.', 'wpv-views') . '</a></p>',
 		'close'			=> 'true',
 		'hidden'		=> 'true',
 		'classname'		=> 'js-metasection-help-filter js-for-view-purpose-full'
@@ -188,6 +177,7 @@ function wpv_get_view_filter_introduction_data() {
 						. '<p>' . __('You can also click on the "Search" button to add a search box for visitors', 'wpv-views') . '</p>'
 						. '<p>'. __('Use HTML and CSS to style the filter.', 'wpv-views') . WPV_MESSAGE_SPACE_CHAR
 						. __('Remember to include the ‘Submit’ button for the form.', 'wpv-views'). '</p>'
+						. '<p><a href="' . WPV_LINK_CREATE_PARAMETRIC_SEARCH . '" target="_blank">' . __('Learn how to create parametric searches with Views.', 'wpv-views') . '</a></p>'
 						. ' <input id="wpv-parametric-hint-dismiss" type="hidden" class="js-wpv-parametric-hint-dismiss" data-nonce="' . wp_create_nonce( 'wpv_view_parametric_hint_dismiss_nonce')  . '" /> ',
 		'close'			=> 'true',
 		'hidden'		=> 'true',
@@ -366,6 +356,35 @@ function wpv_get_view_ct_slider_introduction_data() {
         'close'         => 'false',
         'hidden'        => 'false',
         'classname'     => 'js-wpv-content-template-slider-hint',
+        'footer'        => 'false'
+    );
+    return $result;
+}
+
+/**
+* ToolSet Help Box for Views
+* Content Template: View Bootstrap Gird mode
+*
+* @return echo the main help boxes for the Content template section section
+*
+*/
+function wpv_get_view_ct_bootstrap_grid_introduction_data( $query_mode ) {
+	
+	if ($query_mode == 'layouts-loop') {
+		$text = __('This Content Template lets you design how each item in this grid will be displayed. A default shortcode that displays the post link has been added. You can edit this and add any field you need to display and design them using HTML and CSS.', 'wpv-views');
+	} else {
+		$text = __('This Content Template lets you design how each item in this grid will be displayed. A default shortcode that displays the post link has been added. You can edit this and add any field you need to display and design them using HTML and CSS.', 'wpv-views') .
+								'<br /><br />' .
+								__('To change what gets displayed, scroll up the the filter section.', 'wpv-views');
+	}
+	
+    $result = array(
+        'text'          => '<p class="js-wpv-ct-was-inserted">' .
+								$text .
+								'</p>' . WPV_MESSAGE_SPACE_CHAR,                      
+        'close'         => 'false',
+        'hidden'        => 'false',
+        'classname'     => 'js-wpv-content-template-bootstrap-grid-hint',
         'footer'        => 'false'
     );
     return $result;

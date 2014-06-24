@@ -44,22 +44,50 @@ if(is_admin()){
 	* Render status filter item content in the filters list
 	*/
 
-	function wpv_get_list_item_ui_post_status($selected, $view_settings = null) {
+	function wpv_get_list_item_ui_post_status( $selected, $view_settings = null ) {
 
-		if (isset($_POST['checkboxes'])) {
+		if ( isset( $_POST['checkboxes'] ) ) {
 		// From ajax.
 			$selected = $_POST['checkboxes'];
-		} elseif (!is_array($selected)) {
-				$selected = array();
+		} elseif ( !is_array( $selected ) ) {
+			$selected = array();
 		}
-
+		
+		ob_start();
+		?>
+		<p class='wpv-filter-status-summary js-wpv-filter-summary js-wpv-filter-status-summary'>
+			<?php echo wpv_get_filter_status_summary_txt( $selected ); ?>
+		</p>
+		<p class='edit-filter js-wpv-filter-edit-controls'>
+			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-status-edit-open' title='<?php echo esc_attr( __('Edit','wpv-views') ); ?>'></i>
+			<i class='button-secondary icon-trash icon-large js-filter-remove' title='<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_status_delete_nonce' ); ?>'></i>
+		</p>
+		<div id="wpv-filter-status-edit" class="wpv-filter-edit js-wpv-filter-edit">
+			<fieldset>
+				<p><strong><?php echo __('Post Status', 'wpv-views'); ?>:</strong></p>
+				<div id="wpv-filter-status" class="js-filter-status-list">
+					<?php echo wpv_render_status_checkboxes(
+						array( 'publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit', 'trash', 'any' ),
+						$selected,
+						'post_status'
+					); ?>
+				</div>
+			</fieldset>
+			<p>
+				<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-status-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_status_nonce' ); ?>" />
+			</p>
+		</div>
+		<?php
+		$res = ob_get_clean();
+		return $res;
+		/*
 		$checkboxes = wpv_render_status_checkboxes(array('publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit', 'trash', 'any'),
 												$selected,
 												'post_status');
 
 		$td = "<p class='wpv-filter-status-summary js-wpv-filter-summary js-wpv-filter-status-summary'>\n";
 		$td .= wpv_get_filter_status_summary_txt($selected);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary js-wpv-filter-edit-open js-wpv-filter-status-edit-open'>". __('Edit','wpv-views') ."</button>\n<i class='icon-remove-sign js-filter-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_status_delete_nonce' ) . "'></i>\n</p>";
+		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-status-edit-open'title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_status_delete_nonce' ) . "'></i>\n</p>";
 		$td .= "<div id=\"wpv-filter-status-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
 		$td .= '<fieldset>';
 		$td .= '<p><strong>' . __('Post Status', 'wpv-views') . ':</strong></p>';
@@ -75,6 +103,7 @@ if(is_admin()){
 		$td .= '</div>';
 
 		return $td;
+		*/
 	}
 	
 	/**

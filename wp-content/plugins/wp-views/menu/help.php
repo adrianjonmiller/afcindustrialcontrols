@@ -51,7 +51,7 @@
                     	<?php _e('WordPress Archives let you customize standard listing pages. You will be able to customize the blog, custom post archives, taxonomy pages and other standard listing pages.','wpv-views'); ?>
                     </p>
                     <p>
-                    	<a class="button-primary" href="<?php echo admin_url('admin.php?page=view-archives'); ?>"><?php _e('Create a new Wordpress Archive') ?></a>
+                    	<a class="button-primary" href="<?php echo admin_url('admin.php?page=view-archives'); ?>"><?php _e('Create a new WordPress Archive') ?></a>
                     </p>
                 </li>
 

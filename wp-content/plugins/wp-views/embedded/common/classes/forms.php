@@ -2,6 +2,11 @@
 /**
  * Returns HTML formatted output for elements and handles form submission.
  *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/common/tags/Views-1.6.1-Types-1.5.7/classes/forms.php $
+ * $LastChangedDate: 2014-05-09 11:24:35 +0000 (Fri, 09 May 2014) $
+ * $LastChangedRevision: 22197 $
+ * $LastChangedBy: marcin $
+ *
  * @version 1.0
  */
 if (!class_exists('Enlimbo_Forms_Wpcf')) {
@@ -359,7 +364,12 @@ if (!class_exists('Enlimbo_Forms_Wpcf')) {
             $element['_render']['suffix'] = isset($element['#suffix']) ? $element['#suffix'] . "\r\n" : '';
             $element['_render']['before'] = isset($element['#before']) ? $element['#before'] . "\r\n" : '';
             $element['_render']['after'] = isset($element['#after']) ? $element['#after'] . "\r\n" : '';
+            $labelclass = '';
+            if ( isset( $element['#labelclass'] ) ) {
+				$labelclass = $element['#labelclass'] . ' ';
+            }
             $element['_render']['label'] = isset($element['#title']) ? '<label class="'
+					. $labelclass
                     . $this->css_class . '-label ' . $this->css_class . '-'
                     . $element['#type'] . '-label" for="' . $element['#id'] . '">'
                     . stripslashes($element['#title'])
@@ -572,6 +582,9 @@ if (!class_exists('Enlimbo_Forms_Wpcf')) {
             if (!empty($element['#attributes']['disabled']) || !empty($element['#disable'])) {
                 $element['_render']['element'] .= ' onclick="javascript:return false; if(this.checked == 1){this.checked=1; return true;}else{this.checked=0; return false;}"';
             }
+            if (!empty($element['#attributes']['#disabled'])) {
+                $element['_render']['element'] .= ' disabled="disabled""';
+            }
 			
             $element['_render']['element'] .= ' />';
             $pattern = isset($element['#pattern']) ? $element['#pattern'] : '<BEFORE><PREFIX><ELEMENT>&nbsp;<LABEL><ERROR><SUFFIX><DESCRIPTION><AFTER>';
@@ -662,7 +675,12 @@ if (!class_exists('Enlimbo_Forms_Wpcf')) {
                 }
                 $value['#name'] = $element['#name'];
                 $value['#default_value'] = isset($element['#default_value']) ? $element['#default_value'] : $value['#value'];
-                $value['#disable'] = isset($element['#disable']) ? $element['#disable'] : false;
+                if ( !isset( $value['#disable'] ) ) {
+					$value['#disable'] = isset($element['#disable']) ? $element['#disable'] : false;
+				}
+                if ( isset( $element['#attributes'] ) && !isset( $value['#attributes'] ) ) {
+					$value['#attributes'] = $element['#attributes'];
+				}
                 $element['_render']['element'] .= $this->radio($value);
             }
             $pattern = isset($element['#pattern']) ? $element['#pattern'] : '<BEFORE><PREFIX><TITLE><DESCRIPTION><ELEMENT><SUFFIX><AFTER>';
@@ -708,6 +726,9 @@ if (!class_exists('Enlimbo_Forms_Wpcf')) {
 				{
 					$element['_render']['element'] .= ( $element['#default_value']
 	                        == $value['#value']) ? ' selected="selected"' : '';
+				}
+				if ( isset( $value['#disable'] ) ) {
+					$element['_render']['element'] .= ' disabled="disabled"';
 				}
                 
                 $element['_render']['element'] .= $this->_setElementAttributes($value);

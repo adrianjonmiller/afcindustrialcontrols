@@ -1,4 +1,12 @@
 <?php
+/**
+ *
+ * $HeadURL: https://www.onthegosystems.com/misc_svn/cck/tags/1.5.7/embedded/admin.php $
+ * $LastChangedDate: 2014-05-23 15:15:01 +0200 (Fri, 23 May 2014) $
+ * $LastChangedRevision: 22676 $
+ * $LastChangedBy: marcin $
+ *
+ */
 require_once(WPCF_EMBEDDED_ABSPATH . '/common/visual-editor/editor-addon.class.php');
 require_once WPCF_EMBEDDED_ABSPATH . '/includes/post-relationship.php';
 
@@ -26,6 +34,7 @@ function wpcf_embedded_admin_init_hook() {
 
     // Add Media callback
     add_action( 'add_attachment', 'wpcf_admin_save_attachment_hook', 10 );
+    add_action( 'add_attachment', 'wpcf_admin_add_attachment_hook', 10 );
     add_action( 'edit_attachment', 'wpcf_admin_save_attachment_hook', 10 );
 
     // Render messages
@@ -106,6 +115,17 @@ function wpcf_admin_save_post_hook( $post_ID, $post ) {
     require_once WPCF_EMBEDDED_INC_ABSPATH . '/fields.php';
     require_once WPCF_EMBEDDED_INC_ABSPATH . '/fields-post.php';
     wpcf_admin_post_save_post_hook( $post_ID, $post );
+}
+
+/**
+ * Save attachment hook.
+ * 
+ * @param type $attachment_id
+ */
+function wpcf_admin_add_attachment_hook( $attachment_id )
+{
+    $post = get_post( $attachment_id );
+    wpcf_admin_post_add_attachment_hook( $attachment_id, $post );
 }
 
 /**
@@ -264,19 +284,11 @@ function wpcf_form_add_js_validation( $element ) {
  */
 function wpcf_form_render_js_validation( $selector = '.wpcf-form-validate',
         $echo = true ) {
-
-    global $wpcf;
-
-    /*
-     * Since Types 1.1.5 we use Validation object.
-     */
-    $output = $wpcf->validation->js_fields( $selector );
-
+    $output = WPCF_Validation::renderJsonData( $selector );
     if ( $echo ) {
         echo $output;
-    } else {
-        return $output;
     }
+    return $output;
 }
 
 /**
@@ -310,7 +322,7 @@ function wpcf_custom_fields_to_be_copied( $copied_fields, $original_post_id ) {
  * @param type $method
  * @return type 
  */
-function wpcf_admin_validation_messages( $method = false ) {
+function wpcf_admin_validation_messages( $method = false, $sprintf = '' ) {
     $messages = array(
         'required' => __( 'This Field is required', 'wpcf' ),
         'email' => __( 'Please enter a valid email address', 'wpcf' ),
@@ -326,6 +338,8 @@ function wpcf_admin_validation_messages( $method = false ) {
                 'wpcf' ),
         'negativeTimestamp' => __( 'Please enter a date after 1 January 1970.',
                 'wpcf' ),
+        'maxlength' => sprintf( __( 'Maximum of %s characters exceeded.', 'wpcf' ),
+                strval( $sprintf ) ),
     );
     if ( $method ) {
         return isset( $messages[$method] ) ? $messages[$method] : '';

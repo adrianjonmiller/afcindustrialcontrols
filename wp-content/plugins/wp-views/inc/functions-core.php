@@ -222,6 +222,7 @@ function wpv_view_defaults( $settings = 'view_settings', $purpose = 'full' ) {
 			'view_purpose'				=> 'full',
 			'query_type'				=> array('posts'),
 			'taxonomy_type'				=> array('category'),
+			'roles_type'				=> array('administrator'),
 			'post_type_dont_include_current_page'	=> true,
 			'taxonomy_hide_empty'			=> true,
 			'taxonomy_include_non_empty_decendants'	=> true,
@@ -230,10 +231,14 @@ function wpv_view_defaults( $settings = 'view_settings', $purpose = 'full' ) {
 			'order'					=> 'DESC',
 			'taxonomy_orderby'			=> 'name',
 			'taxonomy_order'			=> 'DESC',
+			'users_orderby'				=> 'user_login',
+			'users_order'				=> 'ASC',
 			'limit'					=> -1,
 			'offset'				=> 0,
 			'taxonomy_limit'			=> -1,
 			'taxonomy_offset'			=> 0,
+			'users_limit'   			=> -1,
+			'users_offset'  			=> 0,
 			'posts_per_page'			=> 10,
 			'pagination'				=> array(
 								'disable',
@@ -244,8 +249,9 @@ function wpv_view_defaults( $settings = 'view_settings', $purpose = 'full' ) {
 								'pre_reach'			=> 1,
 								'page_selector_control_type'	=> 'drop_down',
 								'spinner'			=> 'default',
-								'spinner_image'			=> '',
+								'spinner_image'			=> WPV_URL . '/res/img/ajax-loader.gif',
 								'spinner_image_uploaded'	=> '',
+								'callback_next'			=> ''
 								), // this needs carefull review
 			'ajax_pagination'			=> array(
 								'disable',
@@ -322,6 +328,13 @@ function wpv_view_defaults( $settings = 'view_settings', $purpose = 'full' ) {
 			);
 			$defaults['view_settings']['view_purpose'] = 'parametric';
 			break;
+		case 'bootstrap-grid':
+			$defaults['view_settings']['sections-show-hide'] = array(
+				'layout-extra'		=> 'off',
+				'content'			=> 'off',
+			);
+			$defaults['view_settings']['view_purpose'] = 'bootstrap-grid';
+			break;
 		case 'full':
 		default:
 			$defaults['view_settings']['sections-show-hide'] = array(
@@ -390,7 +403,8 @@ function wpv_admin_listing_pagination( $context = 'views', $wpv_found_items, $wp
 			'orderby' => '',
 			'order' => '',
 			'search' => '',
-			'items_per_page' => ''
+			'items_per_page' => '',
+			'status' => ''
 		);
 		$mod_url = wp_parse_args($mod_url, $mod_url_defaults);
 		?>
@@ -400,16 +414,16 @@ function wpv_admin_listing_pagination( $context = 'views', $wpv_found_items, $wp
 					<?php _e('Displaying ', 'wpv-views'); echo $items_start; ?> - <?php echo $items_end; _e(' of ', 'wpv-views'); echo $wpv_found_items; ?>
 				</span>
 				<?php if ( $page > 1 ) { ?>
-					<a href="<?php echo admin_url('admin.php'); ?>?page=<?php echo $context . $mod_url['orderby'] . $mod_url['order'] . $mod_url['search'] . $mod_url['items_per_page']; ?>&amp;paged=<?php echo $page - 1; ?>" class="wpv-filter-navigation-link">&laquo; <?php echo __('Previous page','wpv-views'); ?></a>
+					<a href="<?php echo admin_url('admin.php'); ?>?page=<?php echo $context . $mod_url['orderby'] . $mod_url['order'] . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['status']; ?>&amp;paged=<?php echo $page - 1; ?>" class="wpv-filter-navigation-link">&laquo; <?php echo __('Previous page','wpv-views'); ?></a>
 				<?php } ?>
 				<?php
 				for ( $i = 1; $i <= $pages_count; $i++ ) {
 					$active = 'wpv-filter-navigation-link-inactive';
 					if ( $page == $i ) $active = 'js-active active current'; ?>
-					<a href="<?php echo admin_url('admin.php'); ?>?page=<?php echo $context . $mod_url['orderby'] . $mod_url['order'] . $mod_url['search'] . $mod_url['items_per_page']; ?>&amp;paged=<?php echo $i; ?>" class="<?php echo $active; ?>"><?php echo $i; ?></a>
+					<a href="<?php echo admin_url('admin.php'); ?>?page=<?php echo $context . $mod_url['orderby'] . $mod_url['order'] . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['status']; ?>&amp;paged=<?php echo $i; ?>" class="<?php echo $active; ?>"><?php echo $i; ?></a>
 				<?php } ?>
 				<?php if ( $page < $pages_count ) { ?>
-					<a href="<?php echo admin_url('admin.php'); ?>?page=<?php echo $context . $mod_url['orderby'] . $mod_url['order'] . $mod_url['search'] . $mod_url['items_per_page']; ?>&amp;paged=<?php echo $page + 1; ?>" class="wpv-filter-navigation-link"><?php echo __('Next page','wpv-views'); ?> &raquo;</a>
+					<a href="<?php echo admin_url('admin.php'); ?>?page=<?php echo $context . $mod_url['orderby'] . $mod_url['order'] . $mod_url['search'] . $mod_url['items_per_page'] . $mod_url['status']; ?>&amp;paged=<?php echo $page + 1; ?>" class="wpv-filter-navigation-link"><?php echo __('Next page','wpv-views'); ?> &raquo;</a>
 				<?php } ?>
 				<?php _e('Items per page', 'wpv-views'); ?>
 				<select class="js-items-per-page">
@@ -429,7 +443,7 @@ function wpv_admin_listing_pagination( $context = 'views', $wpv_found_items, $wp
 	<?php }
 }
 
-// NOT needed for Views anymore
+// NOT needed for Views anymore DEPRECATED NOTE Layouts might find this usefull
 
 function _wpv_get_all_views($view_query_mode) {
 	global $wpdb, $WP_Views;
@@ -454,22 +468,6 @@ function _wpv_get_all_views($view_query_mode) {
 
 }
 
-function _wpv_get_all_view_ids( $view_query_mode ) {
-	global $wpdb, $WP_Views;
-	$q = ( 'SELECT ID FROM ' . $wpdb->prefix . 'posts WHERE post_status="publish" AND post_type="view"' );
-	$all_views = $wpdb->get_results( $q );
-	$view_ids = array();
-	foreach ( $all_views as $key => $view ) {
-		$settings = $WP_Views->get_view_settings( $view->ID );
-		if( $settings['view-query-mode'] != $view_query_mode ) {
-			unset( $all_views[$key] );
-		} else {
-			$view_ids[] = $view->ID;
-		}
-	}
-	return $view_ids;
-}
-
 function _wpv_field_views_by_search($all_views, $search_term) {
 /*
 	if ( !empty( $search_term ) ) {
@@ -492,7 +490,7 @@ function _wpv_field_views_by_search($all_views, $search_term) {
 }
 
 /**
-* Check the existence of a kind of View NOT needed for Views anymore
+* Check the existence of a kind of View NOT needed for Views anymore DEPRECATED
 *
 * @param $query_mode kind of View object: normal or archive
 * @return boolean
@@ -502,235 +500,6 @@ function wpv_check_items_exists( $query_mode ) {
 	$all_views = _wpv_get_all_views($query_mode);
 	
     return count( $all_views ) != 0;
-}
-
-/**
-* Check the existence of a kind of View (normal or archive)
-*
-* @param $query_mode kind of View object: normal or archive
-* @return array() of relevant Views if they exists or false if not
-*/
-
-function wpv_check_views_exists( $query_mode ) {
-	$all_views_ids = _wpv_get_all_view_ids($query_mode);
-	if ( count( $all_views_ids ) != 0 ) {
-		return $all_views_ids;
-	} else {
-		return false;
-	}
-}
-
-/**
-* Creates the query for listing Views and WordPress Archives
-*
-* NOT needed for Views anymore
-* NOT needed for WPA by name anymore
-*
-* @param $query_mode kind of View object: normal or archive
-* @param $page number of page being displayed
-* @param $search_term search term if exists
-* @return elements rows
-*/
-
-function wpv_admin_menu_views_listing( $view_query_mode, $page = 1, $search_term = '', $order = '' ) {
-    global $wpdb, $WP_Views;
-    $content = '';
-	
-    $view_query_mode = esc_sql( $view_query_mode );
-    if ( !empty( $search_term ) ) {
-        $search_term = esc_sql( $search_term );
-    }
-
-	$all_views = _wpv_get_all_views($view_query_mode);
-	$all_views = _wpv_field_views_by_search($all_views, $search_term);
-	
-	$wpv_args = array(
-		'post_type' => 'view',
-		'post__in' => explode(',', $all_views),
-		'posts_per_page' => WPV_ITEMS_PER_PAGE,
-		'paged' => $page,
-		'order' => 'ASC',
-		'orderby' => 'title'
-	);
-	
-	if ( $order === 'date' ) {
-		$wpv_args['orderby'] = 'date';
-		$wpv_args['order'] = 'DESC';
-	}
-	
-	if ( $view_query_mode == 'normal' ) {
-		$wpv_args['posts_per_page'] = WPV_ITEMS_PER_PAGE;
-	} else {
-		$wpv_args['posts_per_page'] = '-1';
-	}
-	
-	$new_args = $wpv_args;
-	$wpv_args['posts_per_page'] = '-1';
-	$wpv_args['s'] = $search_term;
-	$query = new WP_Query( $wpv_args );
-	$unique_ids = array();
-	while ($query->have_posts()) :
-		$query->the_post();
-		$unique_ids[] = get_the_id();
-	endwhile;
-	unset($wpv_args['s']);
-	$wpv_args['meta_query'] =array(
-	array(
-		'key' => '_wpv_description',
-		'value' => $search_term,
-		'compare' => 'LIKE'
-		)
-	);
-	$query2 = new WP_Query( $wpv_args );
-	while ($query2->have_posts()) :
-		$query2->the_post();
-		$unique_ids[] = get_the_id();
-	endwhile;
-	unset($wpv_args['meta_query']);
-	
-	$unique = array_unique($unique_ids);
-	if ( count($unique) == 0 ){
-		$new_args['post__in'] = array('-1');
-	}else{
-		$new_args['post__in'] = $unique;
-	}
-	
-	$wpv_query = new WP_Query( $new_args );
-	
-	// $wpv_query = new WP_Query( $wpv_args );
-	$wpv_count_posts = $wpv_query->post_count;
-	
-	if ($wpv_count_posts == 0) {
-		$content = '<tr class="js-wpv-view-list-row"><td colspan=3>'.__('No Views matched your criteria.','wpv-views').'</td></tr>';
-	} else {
-		while ($wpv_query->have_posts()) :
-			$wpv_query->the_post();
-			$wpv_id = get_the_id();
-			switch ( $view_query_mode ) {
-				case 'normal': $content .= wpv_admin_menu_views_listing_row( $wpv_id ); break;
-				case 'archive': $content .= wpv_admin_menu_archive_listing_row( $wpv_id ); break;
-			}
-		endwhile;
-	}
-	
-    return $content;
-}
-
-/**
-* Creates the pagination for listing Views and WordPress Archives NOTE only used in CT now
-*
-* @param $query_mode kind of View object: normal or archive
-* @param $page number of page being displayed
-* @param $section kind of object this pagination is being applyed to: view or ct
-* @param $search_term search term if exists
-* @return elements rows
-*/
-
-function wpv_admin_menu_views_pager( $view_query_mode, $page = 1, $section = 'views', $search_term = '' ) {
-    global $wpdb;
-    $view_query_mode = esc_sql( $view_query_mode );
-    $search_term = esc_sql( $search_term );
-    $page = (int) $page;
-    $query_add = $query_add2 = $search_addon = '';
-    if ( $section == 'views' ) { // Query for views listing pagination
-		
-		$all_views = _wpv_get_all_views($view_query_mode);
-		$all_views = _wpv_field_views_by_search($all_views, $search_term);
-		
-		$wpv_args = array(
-			'post_type' => 'view',
-			'post__in' => explode(',', $all_views),
-			'posts_per_page' => -1,
-			'paged' => $page
-		);
-		
-		$new_args = $wpv_args;
-		$wpv_args['posts_per_page'] = '-1';
-		$wpv_args['s'] = $search_term;
-		$query = new WP_Query( $wpv_args );
-		$unique_ids = array();
-		while ($query->have_posts()) :
-			$query->the_post();
-			$unique_ids[] = get_the_id();
-		endwhile;
-		unset($wpv_args['s']);
-		$wpv_args['meta_query'] =array(
-		array(
-			'key' => '_wpv_description',
-			'value' => $search_term,
-			'compare' => 'LIKE'
-			)
-		);
-		$query2 = new WP_Query( $wpv_args );
-		while ($query2->have_posts()) :
-			$query2->the_post();
-			$unique_ids[] = get_the_id();
-		endwhile;
-		unset($wpv_args['meta_query']);
-		
-		$unique = array_unique($unique_ids);
-		if ( count($unique) == 0 ){
-			$new_args['post__in'] = array('-1');
-		}else{
-			$new_args['post__in'] = $unique;
-		}
-		
-		$wpv_query = new WP_Query( $new_args );
-		
-		// $wpv_query = new WP_Query( $wpv_args );
-		$wpv_count_posts = $wpv_query->post_count;
-    }
-    elseif ( $section == 'ct' ) {
-        $join = $cond = '';
-        if ( defined('ICL_LANGUAGE_CODE') ){    
-            list($join, $cond) = WPV_template::_get_wpml_sql( 'view-template', ICL_LANGUAGE_CODE );
-        }    
-       //print_r($);
-        //$posts = $wpdb->get_col( "SELECT {$wpdb->posts}.ID FROM {$wpdb->posts} {$join} WHERE post_type='{$type}' {$cond}" );
-        if ( !empty( $search_term ) ){
-            $query_add .= ' AND ( `' . $wpdb->prefix . 'posts`.post_title like "%' . $search_term . '%"';
-            $query_add .= ' OR `' . $wpdb->prefix . 'posts`.ID IN (select wpmeta.post_id from `' . $wpdb->prefix . 'postmeta` wpmeta where `' . $wpdb->prefix . 'posts`.ID = wpmeta.post_id AND wpmeta.meta_key="_wpv-content-template-decription" AND wpmeta.meta_value LIKE "%' . $search_term . '%" )';
-            $query_add .= ') ';
-        }
-        $q = ('
-        SELECT DISTINCT count(`' . $wpdb->prefix . 'posts`.ID) as views_count FROM `' . $wpdb->prefix . 'posts` '.$join.'
-        WHERE `' . $wpdb->prefix . 'posts`.post_status="publish" AND `' . $wpdb->prefix . 'posts`.post_type="view-template" 
-        ' . $query_add . $cond );
-    }
-    if ( isset( $q ) ) {
-        $views_count = $wpdb->get_var( $q );
-    } else {
-        $views_count = 0;
-        if ( isset ( $wpv_count_posts ) ) $views_count = $wpv_count_posts;
-    }
-    $content = '';
-    
-    if ( $views_count > 0 ) {
-        $pages_count = ceil( $views_count / WPV_ITEMS_PER_PAGE );
-        if ( $pages_count > 1 ){
-        $content .= '<p>' . __('Go to page:','wpv-views') . '</p>';
-        $content .= '<ul>';
-        $content .= '<li>
-                <a href="#" class="js-wpv-listing-pagination-nav wpv-filter-navigation-link js-wpv-listing-pagination-nav-prev hidden">&laquo; ' . __('Previous page','wpv-views') . '</a>
-        </li>';
-
-        for ( $i = 1; $i <= $pages_count; $i++ ) {
-            $active = 'wpv-filter-navigation-link-inactive';
-            if ( $page == $i )
-                 $active = 'js-active active';
-            $content .= '<li><a href="#" class="js-wpv-listing-pagination-nav ' . $active . '" data-page-num="' . $i . '" >' . $i . '</a></li>';
-        }
-
-        $content .= '<li>
-                <a href="#" class="js-wpv-listing-pagination-nav wpv-filter-navigation-link js-wpv-listing-pagination-nav-next"> ' . __('Next page','wpv-views') . ' &raquo;</a>
-        </li>';
-
-        $content .= '</ul>';
-        }
-        //return $pages_count;
-    }
-
-    return $content;
 }
 
 /**
@@ -765,16 +534,24 @@ function wpv_add_v_icon_to_codemirror( $editor_id, $inline = false ) {
         $view = $_GET['view_id'];
     }
     $is_taxonomy = false;
+	$is_users = false;
     $post_hidden = '';
     $tax_hidden = ' hidden';
+	$users_hidden = ' hidden';
+	
     $meta = get_post_meta( $view, '_wpv_settings', true);
-    
     if ( isset($meta['query_type']) && $meta['query_type'][0] == 'taxonomy'){
            $is_taxonomy = true;
            $post_hidden = ' hidden';
            $tax_hidden = '';
+		   $users_hidden = ' hidden';
     }
-    
+	if ( isset($meta['query_type']) && $meta['query_type'][0] == 'users'){
+           $is_users = true;
+           $post_hidden = ' hidden';
+           $tax_hidden = ' hidden';
+		   $users_hidden = '';
+    }
     
     
     $WP_Views->editor_addon = new Editor_addon('wpv-views', 
@@ -784,8 +561,31 @@ function wpv_add_v_icon_to_codemirror( $editor_id, $inline = false ) {
 
     if ( !$inline ){ echo '<div class="wpv-vicon-for-posts'. $post_hidden .'">';}
     
-    add_short_codes_to_js( array('post', 'taxonomy', 'post-view', 'view-form'), $WP_Views->editor_addon );
-    $WP_Views->editor_addon->add_form_button('', $editor_id , true, true, true);
+	if ( !$inline ){
+	    add_short_codes_to_js( array('post', 'taxonomy', 'post-view', 'view-form'), $WP_Views->editor_addon );
+	    $WP_Views->editor_addon->add_form_button('', $editor_id , true, true, true);
+	}
+	else{
+		if ( empty($view) && isset($_POST['view_id']) ){
+			$view = $_POST['view_id'];
+			$meta = get_post_meta( $view, '_wpv_settings', true);
+		}
+		if ( !isset($meta['query_type'][0]) || ( isset($meta['query_type'][0]) && $meta['query_type'][0]=='posts' )){
+			add_short_codes_to_js( array('post', 'taxonomy', 'post-view', 'view-form','body-view-templates-posts'), $WP_Views->editor_addon );
+	    	$WP_Views->editor_addon->add_form_button('', $editor_id , true, true, true);
+		}elseif( isset($meta['query_type'][0]) && $meta['query_type'][0]=='users' ){
+			$WP_Views->editor_addon->add_users_form_button('', $editor_id, true);
+		}
+		elseif( isset($meta['query_type'][0]) && $meta['query_type'][0]=='taxonomy' ){
+			remove_filter('editor_addon_menus_wpv-views', 'wpv_post_taxonomies_editor_addon_menus_wpv_views_filter', 11);
+        	add_filter('editor_addon_menus_wpv-views', 'wpv_layout_taxonomy_V');  
+       		$WP_Views->editor_addon->add_form_button('', $editor_id, true, true, true);                            
+        	remove_filter('editor_addon_menus_wpv-views', 'wpv_layout_taxonomy_V');
+        	add_filter('editor_addon_menus_wpv-views', 'wpv_post_taxonomies_editor_addon_menus_wpv_views_filter', 11);
+		}
+		
+	}
+    
     if ( !$inline ){echo '</div>';  }
     
     if ( !$inline ){
@@ -799,8 +599,45 @@ function wpv_add_v_icon_to_codemirror( $editor_id, $inline = false ) {
         add_filter('editor_addon_menus_wpv-views', 'wpv_post_taxonomies_editor_addon_menus_wpv_views_filter', 11);
         echo '</div>';
     }
+	if ( !$inline ){
+        echo '<div class="wpv-vicon-for-users'. $users_hidden .'">';
+        
+        //add_filter('editor_addon_menus_wpv-views', 'wpv_layout_users_V');
+    
+        $WP_Views->editor_addon->add_users_form_button('', $editor_id, true);
+                            
+        //remove_filter('editor_addon_menus_wpv-views', 'wpv_layout_users_V');
+        //add_filter('editor_addon_menus_wpv-views', 'wpv_post_taxonomies_editor_addon_menus_wpv_views_filter', 11);
+        echo '</div>';
+    }
 }
 
+/**
+ * Add usermeta V icon menu
+ * 
+ * 
+ **/
+function wpv_layout_users_V($menu) { // MAYBE DEPRECATED
+    
+    // remove post items and add taxonomy items.
+    
+    global $wpv_shortcodes;
+    //print_r( $wpv_shortcodes );exit;
+    $basic = __('Basic', 'wpv-views');
+    $menu = array($basic => array());
+    //print_r($menu);exit;
+    /*$taxonomy = array('username',
+                      'aim');
+
+    foreach ($taxonomy as $key) {
+        $menu[$basic][$wpv_shortcodes[$key][1]] = array($wpv_shortcodes[$key][1],
+                                                                        $wpv_shortcodes[$key][0],
+                                                                        $basic,
+                                                                        '');
+    }    */
+    return $menu;
+
+}
 /**
 * Add CRED button to codemirror editor
 *
@@ -808,39 +645,228 @@ function wpv_add_v_icon_to_codemirror( $editor_id, $inline = false ) {
 * @return $strings without the unwanted sections
 */
 
-function wpv_add_cred_to_codemirror( $editor_id ){
-      echo apply_filters('wpv_meta_html_add_form_button', '', '#'.$editor_id);
+function wpv_add_cred_to_codemirror( $editor_id, $wrapper = '', $echo = true ){
+	$return = '';
+	if ( !empty( $wrapper ) ) {
+		$return .= '<' . $wrapper . '>';
+	}
+	$return .= apply_filters('wpv_meta_html_add_form_button', '', '#'.$editor_id);
+	if ( !empty( $wrapper ) ) {
+		$return .= '</' . $wrapper . '>';
+	}
+	if ( $echo ) {
+		echo $return;
+	} else {
+		return $return;
+	}
 }
 
-//Update defaults and create new CT for slider view
-function wpv_create_new_ct_for_slider_view($id, $view_title){
-         global $wpdb;
-     $i = 0; $add = '';
-     
-     while ( $i == 0 ){
-         
-        $ct_name = $view_title.' - slide'.$add;
-        $total = $wpdb->get_var( $wpdb->prepare(
-        'SELECT count(ID) FROM ' . $wpdb->posts . ' WHERE post_title = %s AND post_type=\'view-template\'',
-        $ct_name
-        ));
-       
-        $add++;
-        if ( $total <= 0){
-            $i=1;
-        }
-     }    
-    
-     $new_template = array(
-          'post_title'    => $ct_name,
-          'post_type'      => 'view-template',
-          'post_content'  => '[wpv-post-link]',
-          'post_status'   => 'publish',
-          'post_author'   => 1
-     );
+//Update defaults and create new CT for slider view or bootstrap-grid view
+function wpv_create_new_ct_for_view($id, $view_title, $purpose){
+    global $wpdb;
+	$i = 0; $add = '';
+	
+	while ( $i == 0 ){
+		
+		$ct_name = $view_title . ' - ' . $purpose . $add;
+		$total = $wpdb->get_var( $wpdb->prepare(
+							'SELECT count(ID) FROM ' . $wpdb->posts . ' WHERE post_title = %s AND post_type=\'view-template\'',
+							$ct_name
+		));
+		
+		$add++;
+		if ( $total <= 0){
+			$i=1;
+		}
+	}    
+   
+	$new_template = array(
+		'post_title'    => $ct_name,
+		'post_type'      => 'view-template',
+		'post_content'  => '[wpv-post-link]',
+		'post_status'   => 'publish',
+		'post_author'   => 1
+	);
 
-     $post_id = wp_insert_post( $new_template );
-     update_post_meta( $post_id, '_wpv_view_template_mode', 'raw_mode');
-     update_post_meta( $post_id, '_wpv-content-template-decription', '');
-     return $post_id;
+	$post_id = wp_insert_post( $new_template );
+	update_post_meta( $post_id, '_wpv_view_template_mode', 'raw_mode');
+	update_post_meta( $post_id, '_wpv-content-template-decription', '');
+	return $post_id;
+}
+
+/**
+* wpv_create_view
+*
+* API function to create a new View
+*
+* @param $args (array) set of arguments for the new View
+*    'title' (string) (semi-mandatory) Title for the View
+*    'settings' (array) (optional) Array compatible with the View settings to override the defaults
+*    'layout_settings' (array) (optional) Array compatible with the View layout settings to override the defaults
+*
+* @return (array) response of the operation, one of the following
+*    $return['success] = View ID
+*    $return['error'] = 'Error message'
+*
+* @since 1.6.0
+*
+* @note overriding default Views settings and layout settings must provide complete data when the element is an array, because it overrides them all.
+*    For example, $args['settings']['pagination'] can not override just the "postsper page" options: it must provide a complete pagination implementation.
+*    This might change and be corrected in the future, keeping backwards compatibility.
+*/
+
+function wpv_create_view( $args ) {
+	global $wpdb;
+	$return = array();
+	// First, set the title
+	if ( !isset( $args["title"] ) || $args["title"] == '' ) {
+		$args["title"] = __('Unnamed View', 'wp-views');
+	}
+	// Check for already existing Views with that title
+	$postid = $wpdb->get_results( "SELECT ID FROM $wpdb->posts WHERE post_title = '" . $args["title"] . "' AND post_type='view'" );
+	if ( $postid ) {
+		$return['error'] = __( 'A View with that name already exists. Please use another name.', 'wpv-views' );
+		return $return;
+	}
+	// Compose the $post to be created
+	$post = array(
+		'post_type'	=> 'view',
+		'post_title'	=> $args["title"],
+		'post_status'	=> 'publish',
+		'post_content'	=> "[wpv-filter-meta-html]\n[wpv-layout-meta-html]"
+	);
+	$id = wp_insert_post( $post );
+	if ( 0 != $id ) {
+		if ( !isset( $args['settings'] ) || !is_array( $args['settings'] ) ) {
+			$args['settings'] = array();
+		}
+		if ( !isset( $args['layout_settings'] ) || !is_array( $args['layout_settings'] ) ) {
+			$args['layout_settings'] = array();
+		}
+		if ( !isset( $args['settings']["view-query-mode"] ) ) {
+			$args['settings']["view-query-mode"] = 'normal';  // TODO check if view-query-mode is needed anymore, see below
+		}
+		if ( !isset( $args['settings']["purpose"] ) ) {
+			$args['settings']["purpose"] = 'full';
+		}
+		switch ( $args['settings']["view-query-mode"] ) {
+			case 'archive':
+			case 'layouts-loop': // layouts-loop is similar to the archive but the posts to display will come from layouts
+				$view_normal_defaults = wpv_wordpress_archives_defaults( 'view_settings' );
+				$view_normal_layout_defaults = wpv_wordpress_archives_defaults( 'view_layout_settings' );
+				break;
+			default:
+				$view_normal_defaults = wpv_view_defaults( 'view_settings', $args['settings']["purpose"] );
+				$view_normal_layout_defaults = wpv_view_defaults( 'view_layout_settings', $args['settings']["purpose"] );
+				break;
+		}
+		
+		switch ($args['settings']["purpose"]) {
+			case 'slider': // if the purpose is slider, create a CT for every slide, add it to the View layout and to the list of connected CT
+				$temp = wpv_create_new_ct_for_view( $id, $args["title"], __('slide', 'wpv-views' ) );
+				$ct_post = get_post($temp);
+				$view_normal_layout_defaults['layout_meta_html'] =
+				str_replace('<wpv-loop>','<wpv-loop>[wpv-post-body view_template="'.$ct_post->post_title.'"]',$view_normal_layout_defaults['layout_meta_html']);
+				$view_normal_layout_defaults['included_ct_ids'] = $temp;
+				update_post_meta($id, '_wpv_first_time_load', 'on');
+				break;
+			
+			case 'bootstrap-grid': // if the purpose is from Layouts plugin, create a CT and add it to the View layout and to the list of connected CT. Create the BS grid
+				
+				$view_normal_defaults['sections-show-hide']['layout-extra'] = 'off';
+				$view_normal_defaults['metasections-hep-show-hide']['wpv-layout-help'] = 'off';
+				
+				$temp = wpv_create_new_ct_for_view( $id, $args["title"], __('grid', 'wpv-views' ) );
+				$ct_post = get_post($temp);
+				$view_normal_layout_defaults['layout_meta_html'] = wpv_create_bootstrap_meta_html($args['cols'],
+																								  $ct_post->post_name,
+																								  $view_normal_layout_defaults['layout_meta_html']);
+				$view_normal_layout_defaults['included_ct_ids'] = $temp;
+				
+				$view_normal_layout_defaults['bootstrap_grid_cols'] = $args['cols'];
+				$view_normal_layout_defaults['bootstrap_grid_container'] = 'false';
+				$view_normal_layout_defaults['bootstrap_grid_individual'] = '';
+				$view_normal_layout_defaults['style'] = 'bootstrap-grid';
+				$view_normal_layout_defaults['insert_at'] = 'insert_replace';
+				$view_normal_layout_defaults['real_fields'] = array('[wpv-post-body view_template=\\"' . $ct_post->post_name. '\\"]');
+				$view_normal_layout_defaults['fields'] = array('name_0' => 'wpv-post-body view_template=\\"' . $ct_post->post_name. '\\"',
+															   'prefix_0' => '',
+															   'row_title_0' => 'Body',
+															   'suffix' => '',
+															   'types_field_data_0' => '',
+															   'types_field_name_0' => '');
+				update_post_meta($id, '_wpv_first_time_load', 'on');
+				break;
+		}
+		
+		// Override the settings with our own
+		foreach ( $args['settings'] as $key => $value ) {
+			$view_normal_defaults[$key] = $args['settings'][$key];
+		}
+		// Override the layout settings with our own
+		foreach ( $args['layout_settings'] as $key => $value ) {
+			$view_normal_layout_defaults[$key] = $args['layout_settings'][$key];
+		}
+		// Set the whole View settings
+		update_post_meta($id, '_wpv_settings', $view_normal_defaults);
+		update_post_meta($id, '_wpv_layout_settings', $view_normal_layout_defaults);
+		$return['success'] = $id;
+	} else {
+		$return['error'] = __( 'The View could not be created.', 'wpv-views' );
+		return $return;
+	}
+	return $return;
+}
+
+/* NOTE: This function is also called from Layouts plugin */
+function wpv_create_bootstrap_meta_html ($cols, $ct_title, $meta_html) {
+	global $WP_Views;
+	
+	$col_num = 12 / $cols;	
+	$output = '';
+	$row_style = '';
+	$col_style = 'col-sm-';
+	$body = '[wpv-post-body view_template="' . $ct_title. '"]';
+	
+	//Row style and cols class for bootstrap 2.0
+	
+	$options = $WP_Views->get_options();
+	if (class_exists('WPDD_Layouts_CSSFrameworkOptions')) {
+		$bootstrap_ver = WPDD_Layouts_CSSFrameworkOptions::getInstance()->get_current_framework();
+		$options['wpv_bootstrap_version'] = str_replace('bootstrap-','',$bootstrap_ver);
+	}else{
+		//Load bootstrap version from views settings
+		if ( !isset($options['wpv_bootstrap_version']) ){
+			$options['wpv_bootstrap_version'] = 2;
+		}
+	}
+	
+	if ( $options['wpv_bootstrap_version'] == 2){
+		$row_style = ' row-fluid';
+		$col_style = 'span';
+	}	
+
+	$output .= "   <wpv-loop wrap=\"" . $cols . "\" pad=\"true\">\n";
+	$ifone = '';
+	// 
+	if ( $cols == 1){
+		$ifone = '</div>';	
+	}
+	$output .= "         [wpv-item index=1]\n";
+	$output .= "            <div class=\"row" . $row_style . "\"><div class=\"" . $col_style . $col_num . "\">" . $body . "</div>" . $ifone . "\n";
+	$output .= "         [wpv-item index=other]\n";
+	$output .= "            <div class=\"" . $col_style . $col_num . "\">" . $body . "</div>\n";
+
+	if ( $cols > 1){
+		$output .= "         [wpv-item index=" . $cols . "]\n";
+		$output .= "            <div class=\"" . $col_style . $col_num . "\">" . $body . "</div></div>\n";
+	}
+	
+	$output .= "         [wpv-item index=pad]\n";
+	$output .= "            <div class=\"" . $col_style . $col_num . "\"></div>\n";
+	$output .= "         [wpv-item index=pad-last]\n";
+	$output .= "            </div>\n";
+	$output .= "    </wpv-loop>\n";
+	
+	return preg_replace('#\<wpv-loop(.*?)\>(.*)</wpv-loop>#is', $output, $meta_html);
 }

@@ -14,9 +14,9 @@ jQuery(document).ready(function(){
      * Views Layout Meta HTML, CRED form.
      */
     window.wpcfActiveEditor = 'content';
-    jQuery('.wp-media-buttons a, .wpcf-wysiwyg .editor_addon_dropdown .item, #postdivrich .editor_addon_dropdown .item, #wpv_filter_meta_html_admin_edit .item, #wpv_layout_meta_html_admin_edit .item').on('click', function(){
-        window.wpcfActiveEditor = jQuery(this).parents('.wpcf-wysiwyg, #postdivrich, #wpv_layout_meta_html_admin, #wpv_filter_meta_html_admin')
-        .find('textarea#content, textarea.wpcf-wysiwyg, textarea#wpv_layout_meta_html_content, textarea#wpv_filter_meta_html_content').attr('id');
+    jQuery('.wp-media-buttons a, .wpcf-wysiwyg .editor_addon_dropdown .item, .wpt-wysiwyg .editor_addon_dropdown .item, #postdivrich .editor_addon_dropdown .item, #wpv_filter_meta_html_admin_edit .item, #wpv_layout_meta_html_admin_edit .item').on('click', function(){
+        window.wpcfActiveEditor = jQuery(this).parents('.wpt-wysiwyg, .wpcf-wysiwyg, #postdivrich, #wpv_layout_meta_html_admin, #wpv_filter_meta_html_admin')
+        .find('textarea#content, textarea.wpcf-wysiwyg, textarea.wpt-wysiwyg, textarea#wpv_layout_meta_html_content, textarea#wpv_filter_meta_html_content').attr('id');
 
     /*
          *
@@ -152,7 +152,22 @@ jQuery(document).ready(function(){
             icl_editor_popup(drop_down);
 
 			jQuery(drop_down).find('.search_field').focus();
-
+			
+			// Make sure the dialog fits on the screen when used in
+			// Layouts for the Post Content dialog
+			if (jQuery(drop_down).closest('#ddl-default-edit').length > 0) {
+				var dialog_bottom = jQuery(drop_down).offset().top + jQuery(drop_down).height();
+				dialog_bottom -= jQuery(window).scrollTop();
+				var window_height = jQuery(window).height();
+				
+				if (dialog_bottom > window_height) {
+					var new_top = jQuery(drop_down).offset().top - (dialog_bottom - window_height + 70);
+					if (new_top < 0) {
+						new_top = 0;
+					}
+					jQuery(drop_down).animate({top : new_top}, 200);
+				}
+			}
         }
 
         // Bind close on iFrame click (it's loaded now)
@@ -643,7 +658,8 @@ function icl_editor_bind_auto_close() {
         if ( !( $target.hasClass('wpv_add_fields_button') || $target.hasClass('js-code-editor-toolbar-button-v-icon') || 
         $target.parent().hasClass('js-code-editor-toolbar-button-v-icon') 
          || $target.hasClass('js-wpv-shortcode-post-icon-wpv-views')
-          || $target.hasClass('js-wpv-shortcode-post-icon-types') ) ) {
+          || $target.hasClass('js-wpv-shortcode-post-icon-types') 
+          || $target.hasClass('js-wpcf-access-editor-button') ) ) {
 
             // if we click outside the popup
             if ( $target.parents('.editor_addon_dropdown').length === 0 ) {

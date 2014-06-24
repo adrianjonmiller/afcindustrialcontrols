@@ -11,7 +11,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 			href: ajaxurl,
 			data: data,
 			onComplete:function(){
-				$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+				$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 			}
 		});
 	});
@@ -55,19 +55,19 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 		if ( $(this).val() == 0 ){
 			if( $('#js-wpv-ct-add-id').val() == 0){
 				$('#js-wpv-ct-add-id').focus();
-				$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+				$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 			}
 			else{
-				$('.js-create-new-temlate').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
+				$('.js-create-new-template').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
 			}
 		}
 		if ( $(this).val() == 2 ){
 			if( $('#js-wpv-ct-add-id-assigned').val() == 0){
 				$('#js-wpv-ct-add-id-assigned').focus();
-				$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+				$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 			}
 			else{
-				$('.js-create-new-temlate').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
+				$('.js-create-new-template').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
 			}
 			$('#js-wpv-add-to-editor-line').hide();
 
@@ -75,10 +75,10 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 		if ($(this).val() == 1 ){
 			if ($('#js-wpv-ct-type-new-name').val() == ''){
 				$('#js-wpv-ct-type-new-name').focus();
-				$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+				$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 			}
 			else{
-				$('.js-create-new-temlate').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
+				$('.js-create-new-template').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
 			}
 		}
 	});
@@ -88,10 +88,10 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 		$('input[name=wpv-ct-type]').prop('checked',false);
 		$('#js-wpv-ct-type-new').prop('checked',true);
 		if ( $(this).val() == ''){
-			$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+			$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 		}
 		else{
-			$('.js-create-new-temlate').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
+			$('.js-create-new-template').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
 		}
 		$('#js-wpv-add-to-editor-line').slideDown("slow");
 	});
@@ -100,10 +100,10 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 		$('input[name=wpv-ct-type]').prop('checked',false);
 		$('#js-wpv-ct-type-existing').prop('checked',true);
 		if ( $(this).val() == 0){
-			$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+			$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 		}
 		else{
-			$('.js-create-new-temlate').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
+			$('.js-create-new-template').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
 		}
 		$('#js-wpv-add-to-editor-line').slideDown("slow");
 	});
@@ -112,10 +112,10 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 		$('input[name=wpv-ct-type]').prop('checked',false);
 		$('#js-wpv-ct-type-existing-asigned').prop('checked',true);
 		if ( $(this).val() == 0){
-			$('.js-create-new-temlate').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
+			$('.js-create-new-template').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 		}
 		else{
-			$('.js-create-new-temlate').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
+			$('.js-create-new-template').prop('disabled',false).removeClass('button-secondary').addClass('button-primary');
 		}
 		//$('#js-wpv-add-to-editor-line').css('display','none');
 		$('#js-wpv-add-to-editor-line').hide();
@@ -128,7 +128,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 		open_inline = false;
 		var check_exists = false;
 		$('#wpv-no-ct-assigned').remove();
-		$('.js-create-new-temlate').prop('disabled',true);
+		$('.js-create-new-template').prop('disabled',true);
 		if ( $('input[name=wpv-ct-type]:checked').val() == 0 ){
 			if ($('#js-wpv-ct-add-id').val() == ''){
 				return;
@@ -176,7 +176,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 					type: ''
 				 	});
 				 	$('.wpv_ct_inline_message').remove();
-				 	$('.js-create-new-temlate').prop('disabled',false);
+				 	$('.js-create-new-template').prop('disabled',false);
 				 	return false;
 					//
 				}
@@ -236,6 +236,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 
 		var $this = $(this);
 		var id = $this.data('target');
+		var viewID =  $this.data('viewid');
 		var $inlineEditor = $('.js-wpv-ct-inline-edit ').filter('[data-template-id='+ id +']');
 		var $arrowIcon = $this.find('[class^="icon-"]');
 
@@ -247,7 +248,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 
 
 			} else {
-
+				
 				$arrowIcon
 					.removeClass('icon-caret-down')
 					.addClass('icon-caret-up');
@@ -256,6 +257,7 @@ jQuery(function($) { // TODO - IMPORTANT avoid non js- prefixed selectors and ID
 					data = {
 						action : 'wpv_ct_loader_inline',
 						id : id,
+						view_id: viewID,
 						wpnonce : $('#wpv-ct-inline-edit').attr('value')
 					};
 

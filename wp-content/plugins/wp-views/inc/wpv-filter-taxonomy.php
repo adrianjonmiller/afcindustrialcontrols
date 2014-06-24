@@ -1,6 +1,6 @@
 <?php
 
-
+// I think that DEPRECATED: there is no wpv_view_settings_save action anymore
 add_filter('wpv_view_settings_save', 'wpv_taxonomy_defaults_save', 10, 1);
 function wpv_taxonomy_defaults_save($view_settings) {
     global $taxonomy_checkboxes_defaults;
@@ -15,6 +15,9 @@ function wpv_taxonomy_defaults_save($view_settings) {
 
     return $view_settings;
 }
+
+// DEPRECATED
+// Only used in the old wpv-filter-types.php file
 
 function wpv_get_taxonomy_filter_summary($view_settings) {
 
@@ -32,6 +35,8 @@ function wpv_get_taxonomy_filter_summary($view_settings) {
 
 }
 
+// I think that DEPRECATED
+// Only used in the old wpv-filter-types.php file
 
 function wpv_taxonomy_radios($view_settings) {
 	$taxonomies = get_taxonomies('', 'objects');
@@ -58,6 +63,9 @@ function wpv_taxonomy_radios($view_settings) {
     <?php
 }
 
+// I think that DEPRECATED
+// Only used in the old wpv-filter-types.php file
+
 function wpv_taxonomy_settings($view_settings) {
 
     ?>
@@ -73,12 +81,15 @@ function wpv_taxonomy_settings($view_settings) {
     <?php
 }
 
-add_filter('wpv-view-get-content-summary', 'wpv_taxonomy_summary_filter', 5, 3);
+// DEPRECATED
+// New filter in the redesign/ folder
 
-function wpv_taxonomy_summary_filter($summary, $post_id, $view_settings) {
-	if(isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'taxonomy') {
+// add_filter('wpv-view-get-content-summary', 'wpv_taxonomy_summary_filter', 5, 3);
+
+function wpv_taxonomy_summary_filter( $summary, $post_id, $view_settings ) {
+	if ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'taxonomy' ) {
 		ob_start();
-		wpv_get_taxonomy_filter_summary($view_settings);
+		wpv_get_taxonomy_filter_summary( $view_settings );
 		$summary .= ob_get_contents();
 		ob_end_clean();
 	}

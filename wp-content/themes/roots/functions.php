@@ -52,7 +52,7 @@ add_action('after_setup_theme', 'roots_setup');
 
 // http://codex.wordpress.org/Function_Reference/register_sidebar
 function roots_register_sidebars() {
-  $sidebars = array('Sidebar', 'Footer');
+  $sidebars = array('Sidebar', 'Footer', 'Home');
 
   foreach($sidebars as $sidebar) {
     register_sidebar(

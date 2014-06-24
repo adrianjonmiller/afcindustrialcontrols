@@ -1,17 +1,7 @@
 <?php
 
-function wpv_taxonomy_order_by_default_settings($view_settings) {
-
-    if (!isset($view_settings['taxonomy_orderby'])) {
-        $view_settings['taxonomy_orderby'] = 'name';
-    }
-    if (!isset($view_settings['taxonomy_order'])) {
-        $view_settings['taxonomy_order'] = 'DESC';
-    }
-
-    return $view_settings;
-}
-
+// DEPRECATED
+// This global is not needed anymore
 $taxonomy_order_by = array(
     'id' => 'ID',
     'count' => 'Count',
@@ -20,6 +10,9 @@ $taxonomy_order_by = array(
     'term_group' => 'Term_group',
     'none' => 'None'
 );
+
+// DEPRECATED only used on the old wpv_filter_types_admin() function, not used anymore
+// TO DELETE
 
 function wpv_filter_taxonomy_order_by_admin_summary($view_settings) {
     $view_settings = wpv_taxonomy_order_by_default_settings($view_settings);
@@ -34,6 +27,9 @@ function wpv_filter_taxonomy_order_by_admin_summary($view_settings) {
     echo sprintf(__(', ordered by %s, %s', 'wpv-views'), $order_by, $order);
 
 }
+
+// DEPRECATED only used on the old wpv_filter_types_admin() function, not used anymore
+// TO DELETE
 
 function wpv_filter_taxonomy_order_by_admin($view_settings) {
     $view_settings = wpv_taxonomy_order_by_default_settings($view_settings);
@@ -71,12 +67,16 @@ function wpv_filter_taxonomy_order_by_admin($view_settings) {
 
     <?php
 }
-add_filter('wpv-view-get-content-summary', 'wpv_taxonomy_order_summary_filter', 5, 3);
 
-function wpv_taxonomy_order_summary_filter($summary, $post_id, $view_settings) {
-	if(isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'taxonomy') {
+// DEPRECATED
+// New filter added to the redesign/ folder
+
+//add_filter('wpv-view-get-content-summary', 'wpv_taxonomy_order_summary_filter', 5, 3);
+
+function wpv_taxonomy_order_summary_filter( $summary, $post_id, $view_settings ) {
+	if( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'taxonomy' ) {
 		ob_start();
-		wpv_filter_taxonomy_order_by_admin_summary($view_settings);
+		wpv_filter_taxonomy_order_by_admin_summary( $view_settings );
 		$summary .= ob_get_contents();
 		ob_end_clean();
 	}

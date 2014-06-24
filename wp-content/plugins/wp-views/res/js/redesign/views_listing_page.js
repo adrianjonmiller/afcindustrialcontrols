@@ -5,60 +5,12 @@ jQuery(document).ready(function($)  {
     // Store the view ID
     var data_view_id = null;
 
-    // Process delete view
-    /*
-	$(document).on('click','.js-remove-view-permanent', function () {
-
-		WpvPaginationOverlay.showOverlay();
-			$.colorbox.close();
-
-		var data = {
-		action: 'wpv_delete_view',
-		id: data_view_id,
-		page: WpvPagination.getActivePage(),
-		search_term: $('[name="s"]').val(),
-		query_mode: 'normal',
-		wpnonce : $('#work_views_listing').attr('value')
-		};
-
-		// set data_view_id back to default
-		data_view_id = null;
-
-		$.post(ajaxurl, data, function(response) {
-		$('#wpv_view_list_row_'+data.id).fadeOut('fast',function(){
-
-			var $tbody = $(this).parent();
-			$(this).remove();
-
-			if (response.content.length == 0 ) {
-			$('.js-wpv-views-listing').hide();
-				$('.js-wpv-views-add-new-top, .js-wpv-views-add-new, .js-wpv-views-listing-arrange, #posts-filter').hide();
-				$('.js-wpv-view-not-exist').show();
-			} else {
-			$('.js-wpv-views-listing tbody').empty().append(response.content);
-			}
-
-			$('.wpv-listing-pagination').empty().append(response.pager);
-				WpvPaginationOverlay.hideOverlay();
-
-		});
-
-		}, "json");
-
-	});
-	*/
+	// Delete View action after confirmation
 
 	$(document).on('click','.js-remove-view-permanent', function () {
 		var spinnerContainer = $('<div class="spinner ajax-loader">').insertBefore($(this)).show();
 		$(this).prop('disabled', true).addClass('button-secondary').removeClass('button-primary');
 		
-		var url_params = decodeURIParams(),
-		       url_page = null;
-		if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
-			if ( $('.js-wpv-view-list-row').length == 1) {
-				url_page = 'paged=' + ( url_params['paged'] - 1 );
-			}
-		}
 		var data = {
 			action: 'wpv_delete_view_permanent',
 			id: data_view_id,
@@ -71,7 +23,14 @@ jQuery(document).ready(function($)  {
 			data:data,
 			success:function(response){
 				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
-					navigateWithURIParams(decodeURIParams(url_page));
+					var url_params = decodeURIParams();
+					if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+						if ( $('.js-wpv-view-list-row').length == 1) {
+							url_params['paged'] = ( url_params['paged'] - 1 );
+						}
+					}
+					url_params['deleted'] = 1;
+					navigateWithURIParams(url_params);
 				} else {
 					console.log( "Error: AJAX returned ", response );
 				}
@@ -85,61 +44,12 @@ jQuery(document).ready(function($)  {
 		});
 	});
 
-	/*
-    $(document).on('click','.js-duplicate-view', function () {
-
-        var newname = $('.js-duplicated-view-name').val();
-
-        WpvPaginationOverlay.showOverlay();
-        $('.js-duplicate-view').prop('disabled',true);
-
-        if ( newname.length !== 0 ) {
-
-            var data = {
-                action: 'wpv_duplicate_view',
-                id: data_view_id, // read the global data_view_id variable
-                name: newname,
-                page_num: $('.wpv-listing-pagination .active').text(), // TODO: Shouldn't we use WpvPagination.getActivePage() here?
-                wpnonce : $('#work_views_listing').attr('value')
-            };
-
-            //data_view_id = null;
-
-            $.post(ajaxurl, data, function(response) {
-            	if ( (typeof(response) !== 'undefined') && response !== null) {
-	            	if( response.error == 'error'){
-		        		$('.js-view-duplicate-error').wpvToolsetMessage({
-							text: response.error_message,
-							stay: true,
-							close: false,
-							type: ''
-						 	});
-						$('.js-duplicate-view').prop('disabled',false);
-						WpvPaginationOverlay.hideOverlay();
-						return false;
-		        	}
-
-		                $('.js-wpv-views-listing tbody').empty().append(response.content);
-		                $('.wpv-listing-pagination').empty().append(response.pager);
-		                $('#wpv_view_list_row_'+response.new_row_id).hide();
-		                $(response.new_row).insertAfter($('#wpv_view_list_row_'+data_view_id));
-		                WpvPaginationOverlay.hideOverlay();
-		 				$.colorbox.close();
-
-
-
-
-               }
-            }, "json");
-
-        }
-    }); */
+	// Duplicate View action after getting the new name
 
 	$(document).on('click','.js-duplicate-view', function () {
 
 		var newname = $('.js-duplicated-view-name').val();
 
-	//	WpvPaginationOverlay.showOverlay();
 		$('.js-duplicate-view').prop('disabled',true).addClass('button-secondary').removeClass('button-primary');
 		var spinnerContainer = $('<div class="spinner ajax-loader">').insertBefore($(this)).show();
 
@@ -182,10 +92,15 @@ jQuery(document).ready(function($)  {
 			});
 		}
 	});
+	
+	// Manage the View listing screen actions dropdown
 
-    $(document).on('change', '.js-views-actions', function() {
+	$('.js-views-actions').on('change keyup', function() {
 
         data_view_id = $(this).data('view-id');
+	view_listing_action_nonce = $(this).data('viewactionnonce');
+	
+	// If action is delete, fire the confirmation popup
 
         if ( $(this).val() === 'delete' ) {
 
@@ -193,11 +108,12 @@ jQuery(document).ready(function($)  {
                  href: '.js-delete-view-dialog',
                  inline: true,
                  onComplete: function() {
-                 //    WpvPaginationOverlay.hideOverlay();
                  }
              });
 
         }
+        
+        // If action is duplicate, fire the popup to give it a title
 
         else if ( $(this).val() === 'duplicate' ) {
 			$('.js-view-duplicate-error .toolset-alert').remove();
@@ -208,8 +124,6 @@ jQuery(document).ready(function($)  {
 
                      var $input = $('.js-duplicated-view-name');
                      var $submitButton = $('.js-duplicate-view');
-
-               //      WpvPaginationOverlay.hideOverlay();
 
                      $input.focus().val('');
 
@@ -230,12 +144,130 @@ jQuery(document).ready(function($)  {
                  }
              });
 
-        }
+	}
+	
+	// If action is trash, move to trash and reload the page
+	
+	else if ( $(this).val() === 'trash' ) {
+		$(this).parents('.js-wpv-view-list-row').find('h3').append(' <div class="spinner ajax-loader"></div>');
+		$('.subsubsub').append('<div class="spinner ajax-loader"></div>');
+		var data = {
+			action: 'wpv_view_change_status',
+			id: data_view_id,
+			newstatus: 'trash',
+			wpnonce : view_listing_action_nonce
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+						if ( $('.js-wpv-view-list-row').length == 1) {
+							url_params['paged'] = ( url_params['paged'] - 1 );
+						}
+					}
+					url_params['trashed'] = response;
+					navigateWithURIParams(url_params);
+				} else {
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+		     
+	}
+	
+	else if ( $(this).val() === 'restore-from-trash' ) {
+		$(this).parents('.js-wpv-view-list-row').find('h3').append(' <div class="spinner ajax-loader"></div>');
+		$('.subsubsub').append('<div class="spinner ajax-loader"></div>');
+		var data = {
+			action: 'wpv_view_change_status',
+			id: data_view_id,
+			newstatus: 'publish',
+			wpnonce : view_listing_action_nonce
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					if ( typeof(url_params['paged']) !== 'undefined' && url_params['paged'] > 1 ) {
+						if ( $('.js-wpv-view-list-row').length == 1) {
+							url_params['paged'] = ( url_params['paged'] - 1 );
+						}
+					}
+					url_params['untrashed'] = 1;
+					navigateWithURIParams(url_params);
+				} else {
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+		   
+	}
+        
+        // Reset the actions dropdown
 
         $('.js-views-actions option').removeAttr('selected');
         $('#list_views_action_'+data_view_id).val($('#list_views_action_'+data_view_id+' option:first').val());
 
     });
+	
+	// Untrash action
+	
+	$(document).on('click', '.js-wpv-untrash', function(e){
+		e.preventDefault();
+		var spinnerContainer = $('<div class="spinner ajax-loader">').insertAfter($(this)).show();
+		var data = {
+			action: 'wpv_view_change_status',
+			id: $(this).data('id'),
+			newstatus: 'publish',
+			wpnonce : $(this).data('nonce')
+		};
+		$.ajax({
+			async:false,
+			type:"POST",
+			url:ajaxurl,
+			data:data,
+			success:function(response){
+				if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+					var url_params = decodeURIParams();
+					url_params['untrashed'] = 1;
+					navigateWithURIParams(url_params);
+				} else {
+					spinnerContainer.remove();
+					console.log( "Error: AJAX returned ", response );
+				}
+			},
+			error: function (ajaxContext) {
+				spinnerContainer.remove();
+				console.log( "Error: ", ajaxContext.responseText );
+			},
+			complete: function() {
+				
+			}
+		});
+	});
+    
+    // Scan button functionality
 
     $(document).on('click', '.js-scan-button', function() {
 
@@ -302,27 +334,34 @@ jQuery(document).ready(function($)  {
 
     $('#posts-filter').submit(function(e) {
 	    e.preventDefault();
-	    navigateWithURIParams(decodeURIParams($(this).serialize()));
+	    var url_params = decodeURIParams($(this).serialize());
+	    if (typeof(url_params['search']) !== 'undefined' && url_params['search'] == '') {
+		    url_params['search'] = null;
+	    }
+	    navigateWithURIParams(url_params);
         return false;
     });
 
     // Change pagination items per page
 
     $(document).on('change', '.js-items-per-page', function() {
-	    navigateWithURIParams(decodeURIParams('paged=1&items_per_page=' + $(this).val()));
+	    var url_params = decodeURIParams('paged=1&items_per_page=' + $(this).val());
+	    navigateWithURIParams(url_params);
     });
 
     $(document).on('click', '.js-wpv-display-all-items', function(e){
 	    e.preventDefault();
-	    navigateWithURIParams(decodeURIParams('paged=1&items_per_page=-1'));
+	    var url_params = decodeURIParams('paged=1&items_per_page=-1');
+	    navigateWithURIParams(url_params);
     });
 
     $(document).on('click', '.js-wpv-display-default-items', function(e){
 	    e.preventDefault();
-	    navigateWithURIParams(decodeURIParams('paged=1&items_per_page=20'));
+	    var url_params = decodeURIParams('paged=1&items_per_page=20');
+	    navigateWithURIParams(url_params);
     });
 
-    // add new View
+    // add new View - open popup
 
     $(document).on('click', '.js-wpv-views-add-new-top, .js-wpv-views-add-new, .js-wpv-views-add-first', function(e) {
 	    e.preventDefault();
@@ -343,6 +382,8 @@ jQuery(document).ready(function($)  {
 		}
 	    })
     });
+    
+	// Add new View - popup behaviour
 
 	$(document).on('change keyup input cut paste', '.js-view-purpose, .js-new-post_title', function(){
 	    $('.js-create-view-form-dialog').find('.toolset-alert').remove();
@@ -359,6 +400,8 @@ jQuery(document).ready(function($)  {
 		    });
 	    }
 	});
+	
+	// Add new View - action
 
 	$(document).on('click', '.js-create-new-view', function(e){
 		e.preventDefault();
@@ -436,6 +479,9 @@ jQuery(document).ready(function($)  {
 				result[key] = true;
 			}
 		}
+		result['untrashed'] = null;
+		result['trashed'] = null;
+		result['deleted'] = null;
 		return result;
 	}
 

@@ -44,18 +44,49 @@ if(is_admin()){
 	* Render author filter item content in the filters list
 	*/
 
-	function wpv_get_list_item_ui_post_author($selected, $view_settings = null) {
+	function wpv_get_list_item_ui_post_author( $selected, $view_settings = null ) {
 
-		if (isset($view_settings['author_mode']) && is_array($view_settings['author_mode'])) {
+		if ( isset( $view_settings['author_mode'] ) && is_array( $view_settings['author_mode'] ) ) {
 			$view_settings['author_mode'] = $view_settings['author_mode'][0];
 		}
-
+		ob_start();
+		?>
+		<p class='wpv-filter-author-edit-summary js-wpv-filter-summary js-wpv-filter-author-summary'>
+			<?php echo wpv_get_filter_author_summary_txt( $view_settings ); ?>
+		</p>
+		<p class='edit-filter js-wpv-filter-edit-controls'>
+			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-author-edit-open' title='<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>'></i>
+			<i class='button-secondary icon-trash icon-large js-filter-remove' title='<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_author_delete_nonce' ); ?>'></i>
+		</p>
+		<div id="wpv-filter-author-edit" class="wpv-filter-edit js-wpv-filter-edit">
+			<fieldset>
+				<p><strong><?php echo __('Post Author', 'wpv-views'); ?>:</strong></p>
+				<div id="wpv-filter-author" class="js-filter-author-list">
+					<?php wpv_render_author_options( array( 'mode' => 'edit', 'view_settings' => $view_settings ) ); ?>
+				</div>
+			</fieldset>
+			<p>
+				<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-author-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_author_nonce' ); ?>" />
+			</p>
+			<p class="wpv-custom-fields-help">
+				<?php echo sprintf(__('%sLearn about filtering by Post Author%s', 'wpv-views'),
+					'<a class="wpv-help-link" href="' . WPV_FILTER_BY_AUTHOR_LINK . '" target="_blank">',
+					' &raquo;</a>'
+				); ?>
+			</p>
+		</div>
+		<?php
+		$res = ob_get_clean();
+		return $res;
+		
+		
+		/*
 		ob_start();
 		wpv_render_author_options(array('mode' => 'edit', 'view_settings' => $view_settings));
 		$data = ob_get_clean();
 		$td = "<p class='wpv-filter-author-edit-summary js-wpv-filter-summary js-wpv-filter-author-summary'>\n";
 		$td .= wpv_get_filter_author_summary_txt($view_settings);
-		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary js-wpv-filter-edit-open js-wpv-filter-author-edit-open'>". __('Edit','wpv-views') ."</button>\n<i class='icon-remove-sign js-filter-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_author_delete_nonce' ) . "'></i>\n</p>";
+		$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-author-edit-open' title='". __('Edit this filter','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Delete this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_author_delete_nonce' ) . "'></i>\n</p>";
 		$td .= "<div id=\"wpv-filter-author-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
 		$td .= '<fieldset>';
 		$td .= '<p><strong>' . __('Post Author', 'wpv-views') . ':</strong></p>';
@@ -77,6 +108,7 @@ if(is_admin()){
 		$td .= '</div>';
 
 		return $td;
+		*/
 	}
 	
 	/**
@@ -273,6 +305,10 @@ function wpv_render_author_options($args) {
 
 		</li>
 		<li>
+			<?php $checked = $view_settings['author_mode'] == 'parent_view' ? 'checked="checked"' : ''; ?>
+			<label><input type="radio" name="author_mode[]" value="parent_view" <?php echo $checked; ?> />&nbsp;<?php _e('Post author is set by the parent View', 'wpv-views'); ?></label>
+		</li>
+		<li>
 			<?php $checked = $view_settings['author_mode'] == 'by_url' ? 'checked="checked"' : ''; ?>
 			<label><input type="radio" name="author_mode[]" value="by_url" <?php echo $checked; ?> />&nbsp;<?php _e('Post author\'s ', 'wpv-views'); ?></label>
 			<select id="wpv_author_url_type" name="author_url_type">
@@ -323,11 +359,14 @@ function wpv_get_filter_author_summary_txt($view_settings, $short=false) {
 		break;
 	case 'this_user':
 		if (isset($view_settings['author_id']) && $view_settings['author_id'] > 0) {
-			$selected_author = $wpdb->get_var($wpdb->prepare("SELECT display_name FROM {$wpdb->prefix}users WHERE ID=%d", $view_settings['author_id']));
+			$selected_author = $wpdb->get_var($wpdb->prepare("SELECT display_name FROM $wpdb->users WHERE ID=%d", $view_settings['author_id']));
 		} else {
 			$selected_author = 'None';
 		}
 		echo sprintf(__('Select posts with <strong>%s</strong> as the <strong>author</strong>.', 'wpv-views'), $selected_author);
+		break;
+	case 'parent_view':
+		_e('Select posts with the <strong>author set by the parent View</strong>.', 'wpv-views');
 		break;
 	case 'by_url':
 		if (isset($view_settings['author_url']) && '' != $view_settings['author_url']){

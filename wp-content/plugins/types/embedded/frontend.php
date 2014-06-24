@@ -120,20 +120,7 @@ function types_render_field( $field_id, $params, $content = null, $code = '' ) {
 
     // Get field
     $field = types_get_field( $field_id );
-
-    //If Access plugin activated
-    if ( function_exists( 'wpcf_access_register_caps' ) ) {
-        require_once WPCF_EMBEDDED_INC_ABSPATH . '/fields.php';
-        $field_groups = wpcf_admin_fields_get_groups_by_field( $field_id );
-        if ( !empty( $field_groups ) ) {
-            foreach ( $field_groups as $field_group ) {
-                if ( !current_user_can( 'view_fields_on_site_' . $field_group['slug'] ) ) {
-                    return;
-                }
-            }
-        }
-    }
-
+	
     // If field not found return empty string
     if ( empty( $field ) ) {
 
@@ -158,17 +145,10 @@ function types_render_field( $field_id, $params, $content = null, $code = '' ) {
         $meta = $_meta['custom_order'];
 
         // Sometimes if meta is empty - array(0 => '') is returned
-        if ( (count( $meta ) == 1 ) ) {
-            $meta_id = key( $meta );
-            $_temp = array_shift( $meta );
-            if ( strval( $_temp ) == '' ) {
-                return '';
-            } else {
-                $params['field_value'] = $_temp;
-                return types_render_field_single( $field, $params, $content,
-                                $code, $meta_id );
-            }
-        } else if ( !empty( $meta ) ) {
+        if ( count( $meta ) == 1 && reset( $meta ) == '' ) {
+            return '';
+        }
+        if ( !empty( $meta ) ) {
             $output = '';
 
             if ( isset( $params['index'] ) ) {
@@ -295,6 +275,8 @@ function types_render_field_single( $field, $params, $content = null,
         // Skype is array
         if ( $field['type'] == 'skype' && isset( $params['field_value']['skypename'] ) ) {
             $output = $params['field_value']['skypename'];
+        } else if ($field['type'] == 'checkboxes' && is_array( $params['field_value'] ) ) {
+            $output = implode( ', ', $params['field_value'] );
         } else {
             $output = $params['field_value'];
         }
@@ -316,12 +298,7 @@ function types_render_field_single( $field, $params, $content = null,
         } else if ( $output == '__wpcf_skip_empty' ) {
             $output = '';
         }
-        
-        // Compat with 'output' => 'html'
-        // TODO Remove If 'class' or 'style' parameters are set - force HTML output
-//        if ( ((isset( $params['class'] ) && !empty( $params['class'] )) || (isset( $params['style'] ) && !empty( $params['style'] ))) && $field['type'] != 'date' ) {
-//            $params['output'] = 'html';
-//        }
+
         if (isset($params['output']) && $params['output'] == 'html') {
             $output = wpcf_frontend_compat_html_output( $output, $field, $content, $params );
         } else {
@@ -537,12 +514,24 @@ function wpcf_views_query( $query, $view_settings ) {
                     // then gets modified to a proper SQL REGEXP in
                     // the get_meta_sql filter.
 
-                    $field_name = substr( $field_name, 5 );
+                    // $field_name = substr( $field_name, 5 );
+                    if ( strpos( $field_name, 'wpcf-' ) === 0 ) {
+						$field_name = substr( $field_name, 5 );
+					}
 
+                    if ( isset( $meta['compare'] ) && in_array( $meta['compare'], array('IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN') ) && is_array( $meta['value'] ) ) {
+						$values = array();
+						foreach ( $meta['value'] as $val_candidate ) {
+							if ( !empty( $val_candidate ) ) {
+								$values[] = $val_candidate;
+							}
+						}
+                    } else {
+						$values = explode( ',', $meta['value'] );
+                    }
+                    
                     $meta_filter_required = true;
                     $meta['compare'] = '=';
-
-                    $values = explode( ',', $meta['value'] );
 
                     $meta['value'] = ' REGEXP(';
 
@@ -551,6 +540,7 @@ function wpcf_views_query( $query, $view_settings ) {
                     $count = 0;
                     foreach ( $values as $value ) {
 
+                        if ( !empty( $value ) ) {
                         foreach ( $options as $key => $option ) {
                             if ( $option['title'] == $value ) {
                                 if ( $count > 0 ) {
@@ -561,6 +551,7 @@ function wpcf_views_query( $query, $view_settings ) {
                             }
                         }
                         $count++;
+                        }
                     }
 
                     $meta['value'] .= ')';
@@ -580,9 +571,11 @@ function wpcf_views_query( $query, $view_settings ) {
 
 function _wpcf_is_checkboxes_field( $field_name ) {
     $opt = get_option( 'wpcf-fields' );
-    if ( $opt && strpos( $field_name, 'wpcf-' ) === 0 ) {
-        $field_name = substr( $field_name, 5 );
-        if ( isset( $opt[$field_name]['type'] ) ) {
+    if( $opt ) {
+        if ( strpos( $field_name, 'wpcf-' ) === 0 ) {
+			$field_name = substr( $field_name, 5 );
+        }
+        if ( isset( $opt[$field_name] ) && is_array( $opt[$field_name] ) && isset( $opt[$field_name]['type'] ) ) {
             $field_type = strtolower( $opt[$field_name]['type'] );
             if ( $field_type == 'checkboxes' ) {
                 return true;

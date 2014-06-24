@@ -4,6 +4,8 @@ if(is_admin()){
 
 	add_action('wpv_add_filter_list_item', 'wpv_add_filter_custom_field_list_item', 1, 1);
 	add_filter('wpv_filters_add_filter', 'wpv_filters_add_filter_custom_field', 20, 2);
+	
+	// TODO check what happens with all the _compare, _type and _value when the meta key has a space AND an underscore?
 
 	function wpv_filters_add_filter_custom_field($filters) {
 		global $WP_Views;
@@ -17,8 +19,22 @@ if(is_admin()){
 				} else {
 					$key_nicename = $key;
 				}
+			} else if (stripos($key, 'views_woo_') === 0) {
+				if ( isset( $all_types_fields[$key] ) && isset( $all_types_fields[$key]['name'] ) ) {
+					$key_nicename = $all_types_fields[$key]['name'];
+				} else {
+					$key_nicename = $key;
+				}
 			} else {
 				$key_nicename = $key;
+			}
+			// Check if the field is in a Types group - if not, register with the full $key
+			if( function_exists('wpcf_admin_fields_get_groups_by_field') ) {
+				$g = '';
+				foreach( wpcf_admin_fields_get_groups_by_field( $key_nicename ) as $gs ) {
+					$g = $gs['name'];
+				}
+				$key_nicename = $g ? $key_nicename : $key;
 			}
 			$filters['custom-field-' . str_replace(' ', '_', $key)] = array('name' => sprintf(__('Custom field - %s', 'wpv-views'), $key_nicename),
 										'present' => 'custom-field-' . $key . '_compare',
@@ -35,7 +51,7 @@ if(is_admin()){
 
 	function wpv_add_filter_custom_field_list_item($view_settings) {
 		if (!isset($view_settings['custom_fields_relationship'])) {
-			$view_settings['custom_fields_relationship'] = 'OR';
+			$view_settings['custom_fields_relationship'] = 'AND';
 		}
 
 		// Find any custom fields
@@ -65,25 +81,28 @@ if(is_admin()){
 		}
 
 
-		if ($td != '') {
-			echo "<li id='js-row-custom-field' class='filter-row-multiple js-filter-row js-filter-row-multiple js-filter-for-posts js-filter-custom-field js-filter-row-custom-field'>";
-				echo "<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary edit-trigger js-wpv-filter-edit-open'>".__('Edit','wpv-views')."</button>\n<i class='icon-remove-sign js-filter-custom-field-row-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_custom_field_row_delete_nonce' ) . "'></i>\n</p>";
-				if ($summary != '') {
-					echo "<p class='wpv-filter-custom-field-edit-summary js-wpv-filter-summary js-wpv-filter-custom-field-summary'>";
-					_e('Select posts with custom fields: ', 'wpv-views');
-					echo $summary;
-					echo "</p>\n";
-				}
-				echo "<div id=\"wpv-filter-custom-field-edit\" class=\"wpv-filter-edit js-filter-custom-field-edit js-wpv-filter-edit\">\n";
-				echo $td; ?>
+		if ($td != '') { ?>
+			<li id='js-row-custom-field' class='filter-row-multiple js-filter-row js-filter-row-multiple js-filter-for-posts js-filter-custom-field js-filter-row-custom-field'>
+				<p class='edit-filter js-wpv-filter-edit-controls'>
+					<i class='button-secondary icon-edit icon-large edit-trigger js-wpv-filter-edit-open' title='<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>'></i>
+					<i class='button-secondary icon-trash icon-large js-filter-custom-field-row-remove' title='<?php echo esc_attr( __('Delete this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_custom_field_row_delete_nonce' ); ?>'></i>
+				</p>
+				<?php if ($summary != '') { ?>
+					<p class='wpv-filter-edit-summary wpv-filter-custom-field-edit-summary js-wpv-filter-summary js-wpv-filter-custom-field-summary'>
+					<?php _e('Select posts with custom field: ', 'wpv-views');
+					echo $summary; ?>
+					</p>
+				<?php } ?>
+				<div id="wpv-filter-custom-field-edit" class="wpv-filter-edit js-filter-custom-field-edit js-wpv-filter-edit">
+				<?php echo $td; ?>
 					<div class="wpv-filter-custom-field-relationship js-wpv-filter-custom-field-relationship-container">
 						<p><strong><?php _e('Custom field relationship:', 'wpv-views') ?></strong></p>
 						<p>
 							<?php _e('Relationship to use when querying with multiple custom fields:', 'wpv-views'); ?>
 							<select name="custom_fields_relationship" class="js-wpv-filter-custom-fields-relationship">
-								<option value="OR"><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
-								<?php $selected = $view_settings['custom_fields_relationship']=='AND' ? ' selected="selected"' : ''; ?>
-								<option value="AND" <?php echo $selected ?>><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
+								<option value="AND"><?php _e('AND', 'wpv-views'); ?>&nbsp;</option>
+								<?php $selected = $view_settings['custom_fields_relationship']=='OR' ? ' selected="selected"' : ''; ?>
+								<option value="OR"<?php echo $selected ?>><?php _e('OR', 'wpv-views'); ?>&nbsp;</option>
 							</select>
 						</p>
 					</div>
@@ -97,9 +116,8 @@ if(is_admin()){
 										); ?>
 					</p>
 				</div>
-				<?php
-			echo "</li>";
-		}
+			</li>
+		<?php }
 	}
 
 	function wpv_get_list_item_ui_post_custom_field($type, $custom_field, $view_settings = array()) {
@@ -120,17 +138,32 @@ if(is_admin()){
 			} else {
 				$field_nicename = $field_name;
 			}
+		} else if (stripos($field_name, 'views_woo_') === 0) {
+			if ( isset( $all_types_fields[$field_name] ) && isset( $all_types_fields[$field_name]['name'] ) ) {
+				$field_nicename = $all_types_fields[$field_name]['name'];
+			} else {
+				$field_nicename = $field_name;
+			}
 		} else {
 			$field_nicename = $field_name;
+		}
+		
+		// Check if the field is in a Types group - if not, register with the full $key
+		if( function_exists('wpcf_admin_fields_get_groups_by_field') ) {
+			$g = '';
+			foreach( wpcf_admin_fields_get_groups_by_field( $field_nicename ) as $gs ) {
+				$g = $gs['name'];
+			}
+			$field_nicename = $g ? $field_nicename : $field_name;
 		}
 
 		ob_start();
 
 		?>
-		<fieldset class="wpv-custom-field-edit-row wpv-filter-row-multiple-element js-filter-row-multiple-element js-filter-row-custom-field-<?php echo $field_name; ?>" data-field="<?php echo $field_name; ?>"><p class="edit-filter js-wpv-filter-custom-field-controls"><i class="icon-remove-sign js-filter-remove" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_custom_field_delete_nonce' );?>"></i></p>
+		<div class="wpv-custom-field-edit-row wpv-filter-row-multiple-element js-filter-row-multiple-element js-filter-row-custom-field-<?php echo $field_name; ?>" data-field="<?php echo $field_name; ?>"><p class="edit-filter js-wpv-filter-custom-field-controls"><i class="button-secondary icon-trash icon-large js-filter-remove" title="<?php _e('Delete this filter','wpv-views'); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_custom_field_delete_nonce' );?>"></i></p>
 			<p><strong><?php echo __('Custom field', 'wpv_views') . ' - ' . $field_nicename; ?>:</strong></p>
 			<?php wpv_render_custom_field_options($args, $view_settings); ?>
-		</fieldset>
+		</div>
 		<?php
 
 		$buffer = ob_get_clean();
@@ -346,7 +379,7 @@ if(is_admin()){
 				$summary .= wpv_get_custom_field_summary($name, $view_array);
 			}
 		}
-		_e('Select posts with custom fields: ', 'wpv-views');
+		_e('Select posts with custom field: ', 'wpv-views');
 		echo $summary;
 		die();
 	}
@@ -405,14 +438,30 @@ function wpv_get_custom_field_summary($type, $view_settings = array()) {
 		} else {
 			$field_nicename = $field_name;
 		}
+	} else if (stripos($field_name, 'views_woo_') === 0) {
+		if ( isset( $all_types_fields[$field_name] ) && isset( $all_types_fields[$field_name]['name'] ) ) {
+			$field_nicename = $all_types_fields[$field_name]['name'];
+		} else {
+			$field_nicename = $field_name;
+		}
 	} else {
 		$field_nicename = $field_name;
+	}
+	
+	// Check if the field is in a Types group - if not, register with the full $key
+	if( function_exists('wpcf_admin_fields_get_groups_by_field') ) {
+		$g = '';
+		foreach( wpcf_admin_fields_get_groups_by_field( $field_nicename ) as $gs ) {
+			$g = $gs['name'];
+		}
+		$field_nicename = $g ? $field_nicename : $field_name;
 	}
 	ob_start();
 	
 	?>
-	<strong><?php echo $field_nicename . ' ' . $view_settings[$type . '_compare'] . ' ' . $view_settings[$type . '_value']; ?></strong>
-	
+	<span class="wpv-filter-multiple-summary-item">
+	<strong><?php echo $field_nicename . ' ' . $view_settings[$type . '_compare'] . ' ' . str_replace( ',', ', ', $view_settings[$type . '_value'] ); ?></strong>
+	</span>
 	<?php
 	
 	$buffer = ob_get_clean();

@@ -2,29 +2,34 @@
 
 add_action('view-editor-section-layout', 'add_view_layout_template', 40, 3);
 
-function add_view_layout_template($view_settings, $view_layout_settings, $view_id) {
+function add_view_layout_template( $view_settings, $view_layout_settings, $view_id ) {
     global $views_edit_help;
     wp_nonce_field( 'wpv-ct-inline-edit', 'wpv-ct-inline-edit' );
-    $meta = get_post_meta( $view_id, '_wpv_layout_settings', true);
-    $meta_settings = get_post_meta( $view_id, '_wpv_settings', true);
     $templates = array();
-    $first_time = get_post_meta( $view_id, '_wpv_first_time_load', true);
-    if ( isset($meta['included_ct_ids']) ){
-        $templates = explode( ',', $meta['included_ct_ids']);
+    $valid_templates = array();
+    $first_time = get_post_meta( $view_id, '_wpv_first_time_load', true );
+    if ( isset( $view_layout_settings['included_ct_ids'] ) ) {
+        $templates = explode( ',', $view_layout_settings['included_ct_ids'] );
+        $valid_templates = $templates;
     }
-    //$meta['included_ct_ids'] = '';
-    //update_post_meta($view_id, '_wpv_layout_settings', $meta );
     $template_list = '';
-    if ( count($templates) > 1 ){
-        for ($i=0; $i<count($templates)-1; $i++){
-            $template_post = get_post($templates[$i]);
-            if ( is_object($template_post) ){
-                 $template_list .= wpv_list_view_ct_item($template_post, $templates[$i], $view_id);
+    if ( count( $templates ) > 0 ) {
+		$attached_templates = count( $templates );
+        for ( $i=0; $i<$attached_templates; $i++ ) {
+			if ( is_numeric( $templates[$i] ) ) {
+				$template_post = get_post( $templates[$i] );
+				if ( is_object( $template_post ) ) {
+					$template_list .= wpv_list_view_ct_item( $template_post, $templates[$i], $view_id );
+				} else {
+					unset( $valid_templates[$i] ); // remove Templates that might have been deleted or are missing
+				}
+            } else {
+				unset( $valid_templates[$i] ); // remove Templates that might have been deleted or are missing
             }
-            else{
-                $meta['included_ct_ids'] = str_replace( $templates[$i].',', '', $meta['included_ct_ids']);
-                update_post_meta($view_id, '_wpv_layout_settings', $meta );
-            }
+        }
+        if ( count( $templates ) != count( $valid_templates ) ) {
+			$view_layout_settings['included_ct_ids'] = implode( ',', $valid_templates );
+			update_post_meta( $view_id, '_wpv_layout_settings', $view_layout_settings );
         }
     }
 
@@ -47,8 +52,15 @@ function add_view_layout_template($view_settings, $view_layout_settings, $view_i
 			</div>
 			<?php
             if ( $first_time == 'on'){
-                $data = wpv_get_view_ct_slider_introduction_data();
-                wpv_toolset_help_box($data);
+				$purpose = $view_settings['purpose'];
+                if ($purpose == 'slider') {
+					$data = wpv_get_view_ct_slider_introduction_data();
+					wpv_toolset_help_box($data);
+				}
+                if ($purpose == 'bootstrap-grid') {
+					$data = wpv_get_view_ct_bootstrap_grid_introduction_data($view_settings["view-query-mode"]);
+					wpv_toolset_help_box($data);
+				}
             }
             ?>
 
@@ -72,7 +84,7 @@ function wpv_list_view_ct_item( $post, $ct_id, $view_id ){
     <li id="wpv-ct-listing-<?php echo $ct_id?>" class="js-wpv-ct-listing js-wpv-ct-listing-show layout-html-editor" data-id="<?php echo $ct_id?>" data-viewid="<?php echo $view_id?>">
         <p>
             <i class="icon-remove-sign js-wpv-ct-remove-from-view" title="<?php _e('Remove this Content Template','wpv-views'); ?>"></i>
-            <button class="js-wpv-content-template-open wpv-content-template-open" data-target="<?php echo $ct_id?>">
+            <button class="js-wpv-content-template-open wpv-content-template-open" data-target="<?php echo $ct_id?>" data-viewid="<?php echo $view_id?>">
             <?php echo $post->post_title;?>  <i class="icon-caret-down"></i>
             </button>
         </p>

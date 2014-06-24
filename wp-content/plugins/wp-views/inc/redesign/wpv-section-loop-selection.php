@@ -31,51 +31,8 @@ function add_view_loop_selection($view_settings, $view_id) {
 			</h3>
 		</div>
 		<div class="wpv-setting">
-			<?php global $WPV_view_archive_loop, $WP_Views;
-			$options = $WP_Views->get_options();
-			$loops = $WPV_view_archive_loop->_get_post_type_loops();
-			$options = $WPV_view_archive_loop->_view_edit_options($view_id, $options);
-			?>
 			<form class="js-loop-selection-form">
-
-				<h3><?php _e('Post type loops', 'wpv-views'); ?></h3>
-				<ul class="enable-scrollbar">
-				<?php foreach($loops as $loop => $loop_name): ?>
-					<?php $checked = (isset ($options['view_' . $loop]) && $options['view_' . $loop] == $view_id) ? ' checked="checked"' : ''; ?>
-					<li>
-						<label>
-							<input type="checkbox" <?php echo $checked; ?> name="wpv-view-loop-<?php echo $loop; ?>" />
-							<?php echo $loop_name; ?>
-						</label>
-					</li>
-
-				<?php endforeach; ?>
-				</ul>
-
-				<h3><?php _e('Taxonomy loops', 'wpv-views'); ?></h3>
-				<ul class="enable-scrollbar">
-				<?php
-					$taxonomies = get_taxonomies('', 'objects');
-					$exclude_tax_slugs = array();
-					$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
-					foreach ($taxonomies as $category_slug => $category):
-						if ( in_array($category_slug, $exclude_tax_slugs) ) {
-							continue;
-						}
-						if ( !$category->show_ui ) {
-							continue; // Only show taxonomies with show_ui set to TRUE
-						}
-						$name = $category->name;
-						$checked = (isset ($options['view_taxonomy_loop_' . $name ]) && $options['view_taxonomy_loop_' . $name ] == $view_id) ? ' checked="checked"' : '';
-					?>
-						<li>
-							<label>
-								<input type="checkbox" <?php echo $checked; ?> name="wpv-view-taxonomy-loop-<?php echo $name; ?>" />
-								<?php echo $category->labels->name; ?>
-							</label>
-						</li>
-					<?php endforeach; ?>
-				</ul>
+				<?php render_view_loop_selection_form( $view_id ); ?>
 			</form>
 			<p class="update-button-wrap">
 				<button data-success="<?php echo htmlentities( __('Loop selection updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Loop selection not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_loop_selection_nonce' ); ?>" class="js-wpv-loop-selection-update button-secondary" disabled="disabled"><?php _e('Update', 'wpv-views'); ?></button>
@@ -83,3 +40,122 @@ function add_view_loop_selection($view_settings, $view_id) {
 		</div>
 	</div>
 <?php }
+
+function render_view_loop_selection_form( $view_id = 0 ) {
+	global $WPV_view_archive_loop, $WP_Views;
+	$options = $WP_Views->get_options();
+	$options = $WPV_view_archive_loop->_view_edit_options($view_id, $options); // TODO check if we just need the $options above
+	$asterisk = ' <span style="color:red">*</span>';
+	$asterisk_explanation = __( '<span style="color:red">*</span> A different WordPress Archive is already assigned to this item', 'wpv-views' );
+	$show_asterisk_explanation = false;
+	$loops = array('home-blog-page' => __('Home/Blog', 'wpv-views'),
+			'search-page' => __('Search results', 'wpv-views'),
+			'author-page' => __('Author archives', 'wpv-views'),
+			'year-page' => __('Year archives', 'wpv-views'),
+			'month-page' => __('Month archives', 'wpv-views'),
+			'day-page' => __('Day archives', 'wpv-views')
+	);
+	?>
+	<h3><?php _e('WordPress Native Archives', 'wpv-views'); ?></h3>
+	<div class="wpv-setting-options-box">
+		<ul class="enable-scrollbar wpv-mightlong-list">
+		<?php foreach ( $loops as $loop => $loop_name ): ?>
+			<?php
+			$show_asterisk = false;
+			$checked = ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
+			if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+				$show_asterisk = true;
+				$show_asterisk_explanation = true;
+			}
+			?>
+			<li>
+				<input type="checkbox" <?php echo $checked; ?> id="wpv-view-loop-<?php echo $loop; ?>" name="wpv-view-loop-<?php echo $loop; ?>" />
+				<label for="wpv-view-loop-<?php echo $loop; ?>"><?php echo $loop_name; echo $show_asterisk ? $asterisk : ''; ?></label>
+			</li>
+		<?php endforeach; ?>
+		</ul>
+	<?php if ( $show_asterisk_explanation ) { ?>
+		<span class="wpv-options-box-info">
+			<?php echo $asterisk_explanation; ?>
+		</span>
+	<?php } ?>
+	</div>
+	<?php
+	$pt_loops = array();
+	$show_asterisk_explanation = false;
+	// Only offer loops for post types that already have an archive
+	$post_types = get_post_types( array( 'public' => true, 'has_archive' => true), 'objects' );
+	foreach ( $post_types as $post_type ) {
+		if ( !in_array( $post_type->name, array( 'post', 'page', 'attachment' ) ) ) {
+			$type = 'cpt_' . $post_type->name;
+			$name = $post_type->labels->name;
+			$pt_loops[$type] = $name;
+		}
+	}
+	if ( count( $pt_loops ) > 0 ) {
+	?>
+	<h3><?php _e('Post Type Archives', 'wpv-views'); ?></h3>
+	<div class="wpv-setting-options-box">
+		<ul class="enable-scrollbar wpv-mightlong-list">
+		<?php foreach ( $pt_loops as $loop => $loop_name ): ?>
+			<?php
+			$show_asterisk = false;
+			$checked = ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
+			if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+				$show_asterisk = true;
+				$show_asterisk_explanation = true;
+			}
+			?>
+			<li>
+				<input type="checkbox" <?php echo $checked; ?> id="wpv-view-loop-<?php echo $loop; ?>" name="wpv-view-loop-<?php echo $loop; ?>" />
+				<label for="wpv-view-loop-<?php echo $loop; ?>"><?php echo $loop_name; echo $show_asterisk ? $asterisk : ''; ?></label>
+			</li>
+		<?php endforeach; ?>
+		</ul>
+	<?php if ( $show_asterisk_explanation ) { ?>
+		<span class="wpv-options-box-info">
+			<?php echo $asterisk_explanation; ?>
+		</span>
+	<?php } ?>
+	</div>
+	<?php } ?>
+
+	<h3><?php _e('Taxonomy Archives', 'wpv-views'); ?></h3>
+	<?php
+	$show_asterisk_explanation = false;
+	?>
+	<div class="wpv-setting-options-box">
+		<ul class="enable-scrollbar wpv-mightlong-list">
+		<?php
+		$taxonomies = get_taxonomies( '', 'objects' );
+		$exclude_tax_slugs = array();
+		$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
+		foreach ( $taxonomies as $category_slug => $category ):
+			if ( in_array( $category_slug, $exclude_tax_slugs ) ) {
+				continue;
+			}
+			if ( !$category->show_ui ) {
+				continue; // Only show taxonomies with show_ui set to TRUE
+			}
+			$name = $category->name;
+			$show_asterisk = false;
+			$checked = ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] == $view_id ) ? ' checked="checked"' : '';
+			if ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] != $view_id ) {
+				$show_asterisk = true;
+				$show_asterisk_explanation = true;
+			}
+		?>
+			<li>
+				<input type="checkbox" <?php echo $checked; ?> id="wpv-view-taxonomy-loop-<?php echo $name; ?>" name="wpv-view-taxonomy-loop-<?php echo $name; ?>" />
+				<label for="wpv-view-taxonomy-loop-<?php echo $name; ?>"><?php echo $category->labels->name; echo $show_asterisk ? $asterisk : ''; ?></label>
+			</li>
+		<?php endforeach; ?>
+		</ul>
+	<?php if ( $show_asterisk_explanation ) { ?>
+		<span class="wpv-options-box-info">
+			<?php echo $asterisk_explanation; ?>
+		</span>
+	<?php } ?>
+	</div>
+	<?php
+}

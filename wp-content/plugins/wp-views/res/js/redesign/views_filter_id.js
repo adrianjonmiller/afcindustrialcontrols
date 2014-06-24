@@ -1,16 +1,16 @@
 // ID Close and save
 
-var wpv_filter_id_selected = jQuery('.js-filter-id-list input').serialize();
+var wpv_filter_id_selected = jQuery('.js-filter-id-list input, .js-filter-id-list select').serialize();
 
 jQuery(document).on('click', '.js-wpv-filter-id-edit-open', function(){ // rebuild the list of the current checked values
-wpv_filter_id_selected = jQuery('.js-filter-id-list input').serialize();
+	wpv_filter_id_selected = jQuery('.js-filter-id-list input, .js-filter-id-list select').serialize();
 });
 
-jQuery(document).on('change keyup input cut paste', '.js-filter-id-list input', function() { // watch on inputs change
+jQuery(document).on('change keyup input cut paste', '.js-filter-id-list input, .js-filter-id-list select', function() { // watch on inputs change
 	jQuery(this).removeClass('filter-input-error');
 	jQuery('.js-wpv-filter-id-edit-ok').prop('disabled', false);
 	wpv_clear_validate_messages('.js-filter-id');
-	if ( wpv_filter_id_selected != jQuery('.js-filter-id-list input').serialize() ) {
+	if ( wpv_filter_id_selected != jQuery('.js-filter-id-list input, .js-filter-id-list select').serialize() ) {
 		jQuery('.js-wpv-filter-id-edit-ok').removeClass('button-secondary').addClass('button-primary').addClass('js-wpv-section-unsaved').val(jQuery('.js-wpv-filter-id-edit-ok').data('save'));
 		setConfirmUnload(true);
 	} else {
@@ -24,17 +24,17 @@ jQuery(document).on('change keyup input cut paste', '.js-filter-id-list input', 
 
 jQuery(document).on('click', '.js-wpv-filter-id-edit-ok', function() {
 	jQuery(this).parent().find('.unsaved').remove();
-	if (wpv_filter_id_selected == jQuery('.js-filter-id-list input').serialize() ) {
+	if (wpv_filter_id_selected == jQuery('.js-filter-id-list input, .js-filter-id-list select').serialize() ) {
 		wpv_close_filter_row('.js-filter-id');
 	} else {
 		var valid = wpv_validate_filter_inputs('.js-filter-id');
 		if (valid) {
-			var update_message = jQuery(this).data('success');
-			var unsaved_message = jQuery(this).data('unsaved');
-			var nonce = jQuery(this).data('nonce');
-			wpv_filter_id_selected = jQuery('.js-filter-id-list input').serialize();
-			var spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show();
-			var data_view_id = jQuery('.js-post_ID').val();
+			var update_message = jQuery(this).data('success'),
+				unsaved_message = jQuery(this).data('unsaved'),
+				nonce = jQuery(this).data('nonce'),
+				spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show(),
+				data_view_id = jQuery('.js-post_ID').val();
+			wpv_filter_id_selected = jQuery('.js-filter-id-list input, .js-filter-id-list select').serialize();
 			var data = {
 				action: 'wpv_filter_id_update',
 				id: data_view_id,

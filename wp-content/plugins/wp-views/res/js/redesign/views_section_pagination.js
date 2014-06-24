@@ -267,10 +267,38 @@ jQuery(function($){
 	jQuery(document).on('click', '.js-wpv-pagination-popup', function(){
 		var active_textarea = jQuery(this).data('content');
 		window.wpcfActiveEditor = active_textarea;
-		var current_cursor = codemirror_views_query.getCursor(true);
-		var text_before = codemirror_views_query.getRange({line:0,ch:0}, current_cursor);
-		var text_after = codemirror_views_query.getRange(current_cursor, {line:codemirror_views_query.lastLine(),ch:null});
-		if (text_before.search(/\[wpv-filter-start.*?\]/g) != -1 && text_after.search(/\[wpv-filter-end.*?\]/g) != -1) {
+		var open_popup = false;
+		if ( active_textarea == 'wpv_filter_meta_html_content' ) {
+			var current_cursor = codemirror_views_query.getCursor(true);
+			var text_before = codemirror_views_query.getRange({line:0,ch:0}, current_cursor);
+			var text_after = codemirror_views_query.getRange(current_cursor, {line:codemirror_views_query.lastLine(),ch:null});
+			if (text_before.search(/\[wpv-filter-start.*?\]/g) != -1 && text_after.search(/\[wpv-filter-end.*?\]/g) != -1) {
+				open_popup = true;
+			} else {
+				jQuery('.js-wpv-settings-filter-extra .js-error-container').wpvToolsetMessage({
+					text:wpv_pagination_texts.wpv_filter_insert_wrong_cursor_position,
+					stay:true,
+					close:true,
+					fadeOut:300
+				});
+			}
+		}
+		if ( active_textarea == 'wpv_layout_meta_html_content' ) {
+			var current_cursor = codemirror_views_layout.getCursor(true);
+			var text_before = codemirror_views_layout.getRange({line:0,ch:0}, current_cursor);
+			var text_after = codemirror_views_layout.getRange(current_cursor, {line:codemirror_views_layout.lastLine(),ch:null});
+			if (text_before.search(/\[wpv-layout-start.*?\]/g) != -1 && text_after.search(/\[wpv-layout-end.*?\]/g) != -1) {
+				open_popup = true;
+			} else {
+				jQuery('.js-wpv-settings-layout-extra .js-error-container').wpvToolsetMessage({
+					text:wpv_pagination_texts.wpv_layout_insert_wrong_cursor_position,
+					stay:true,
+					close:true,
+					fadeOut:300
+				});
+			}
+		}
+		if ( open_popup ) {
 			jQuery.colorbox({
 				inline: true,
 				href: '.js-pagination-form-dialog',
@@ -284,13 +312,6 @@ jQuery(function($){
 					$paginationPreviewMessage.show();
 					$paginationPreviewElements.addClass('disabled');
 				}
-			});
-		} else {
-			jQuery('.js-wpv-settings-filter-extra .js-error-container').wpvToolsetMessage({
-				text:wpv_pagination_texts.wpv_insert_wrong_cursor_position,
-				stay:true,
-				close:true,
-				fadeOut:300
 			});
 		}
 	});
@@ -332,7 +353,7 @@ function wpv_get_pagination_shortcode(pag_control, pag_selector_mode) {
 			output += '[wpv-pager-num-page]';
 		} else if (value.value == 'page_selector') {
 			output += '[wpv-pager-current-page style="' + pag_selector_mode + '"]';
-		} else if (value.value == 'page_controls') { // check if WPML is active and add wpml shortcodes only in that case
+		} else if (value.value == 'page_controls') {
 			output += '[wpv-pager-prev-page][wpml-string context="wpv-views"]Previous[/wpml-string][/wpv-pager-prev-page][wpv-pager-next-page][wpml-string context="wpv-views"]Next[/wpml-string][/wpv-pager-next-page]';
 		}
 	});

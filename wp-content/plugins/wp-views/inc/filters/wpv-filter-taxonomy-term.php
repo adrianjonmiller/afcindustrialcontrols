@@ -47,13 +47,51 @@ if(is_admin()){
 	* Render taxonomy term filter item content in the filters list
 	*/
 
-	function wpv_get_list_item_ui_taxonomy_term($selected, $view_settings = null) {
+	function wpv_get_list_item_ui_taxonomy_term( $selected, $view_settings = null ) {
 
-        if (isset($view_settings['taxonomy_type']) && is_array($view_settings['taxonomy_type'])) {
+        if ( isset( $view_settings['taxonomy_type'] ) && is_array( $view_settings['taxonomy_type'] ) ) {
             $view_settings['taxonomy_type'] = $view_settings['taxonomy_type'][0];
         }
-        if (!isset($view_settings['taxonomy_terms_mode'])) $view_settings['taxonomy_terms_mode'] = 'THESE';
-        if (!isset($view_settings['taxonomy_terms'])) $view_settings['taxonomy_terms'] = array();
+        if ( !isset( $view_settings['taxonomy_terms_mode'] ) ) {
+			$view_settings['taxonomy_terms_mode'] = 'THESE';
+		}
+        if ( !isset( $view_settings['taxonomy_terms'] ) ) {
+			$view_settings['taxonomy_terms'] = array();
+        }
+        
+        if ( function_exists('icl_object_id') && !empty( $view_settings['taxonomy_terms'] ) ) {
+		// Adjust for WPML support
+			$trans_term_ids = array();
+			foreach ( $view_settings['taxonomy_terms'] as $untrans_term_id ) {
+				$trans_term_ids[] = icl_object_id( $untrans_term_id, $view_settings['taxonomy_type'], true );
+			}
+			$view_settings['taxonomy_terms'] = $trans_term_ids;
+		}
+		
+		ob_start()
+		?>
+		<p class='wpv-filter-taxonomy-term-summary js-wpv-filter-summary js-wpv-filter-taxonomy-term-summary'>
+			<?php echo wpv_get_filter_taxonomy_term_summary_txt( $view_settings ); ?>
+		</p>
+		<p class='edit-filter js-wpv-filter-edit-controls'>
+			<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-taxonomy-term-edit-open' title='<?php echo esc_attr( __('Edit this filter','wpv-views') ); ?>'></i>
+			<i class='button-secondary icon-trash icon-large js-filter-remove' title='<?php echo esc_attr( __('Remove this filter','wpv-views') ); ?>' data-nonce='<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_term_delete_nonce' ); ?>'></i>
+		</p>
+		<div id="wpv-filter-taxonomy-term-edit" class="wpv-filter-edit js-wpv-filter-edit">
+			<fieldset>
+				<legend><strong><?php echo __('Taxonomy term', 'wpv-views'); ?>:</strong></legend>
+				<div id="wpv-filter-taxonomy-term" class="js-filter-taxonomy-term-list">
+					<?php wpv_render_taxonomy_term_options( array( 'mode' => 'edit', 'view_settings' => $view_settings ) ); ?>
+				</div>
+			</fieldset>
+			<p>
+				<input class="button-secondary js-wpv-filter-edit-ok js-wpv-filter-taxonomy-term-edit-ok" type="button" value="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-save="<?php echo htmlentities( __('Save', 'wpv-views'), ENT_QUOTES ); ?>" data-close="<?php echo htmlentities( __('Close', 'wpv-views'), ENT_QUOTES ); ?>" data-success="<?php echo htmlentities( __('Updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_filter_taxonomy_term_nonce' ); ?>" />
+			</p>
+		</div>
+		<?php
+		$res = ob_get_clean();
+		return $res;
+        /*
         ob_start();
         wpv_render_taxonomy_term_options(array('mode' => 'edit',
                              'view_settings' => $view_settings));
@@ -61,7 +99,7 @@ if(is_admin()){
 
         $td = "<p class='wpv-filter-taxonomy-term-summary js-wpv-filter-summary js-wpv-filter-taxonomy-term-summary'>\n";
 	$td .= wpv_get_filter_taxonomy_term_summary_txt($view_settings);
-	$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<button class='button-secondary js-wpv-filter-edit-open js-wpv-filter-taxonomy-term-edit-open'>". __('Edit','wpv-views') ."</button>\n<i class='icon-remove-sign js-filter-remove' data-nonce='". wp_create_nonce( 'wpv_view_filter_taxonomy_term_delete_nonce' ) . "'></i>\n</p>";
+	$td .= "</p>\n<p class='edit-filter js-wpv-filter-edit-controls'>\n<i class='button-secondary icon-edit icon-large js-wpv-filter-edit-open js-wpv-filter-taxonomy-term-edit-open' title='". __('Edit','wpv-views') ."'></i>\n<i class='button-secondary icon-trash icon-large js-filter-remove' title='". __('Remove this filter','wpv-views') ."' data-nonce='". wp_create_nonce( 'wpv_view_filter_taxonomy_term_delete_nonce' ) . "'></i>\n</p>";
 	$td .= "<div id=\"wpv-filter-taxonomy-term-edit\" class=\"wpv-filter-edit js-wpv-filter-edit\">\n";
 	$td .= '<fieldset>';
 	$td .= '<legend><strong>' . __('Taxonomy term', 'wpv-views') . ':</strong></legend>';
@@ -77,7 +115,7 @@ if(is_admin()){
 	$td .= '</div>';
 
 	return $td;
-
+	*/
     }
 
 	/**
@@ -166,12 +204,9 @@ if(is_admin()){
     
 	add_filter('wpv-view-get-summary', 'wpv_taxonomy_term_summary_filter', 5, 3);
 
-	function wpv_taxonomy_term_summary_filter($summary, $post_id, $view_settings) {
-		if(isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'taxomomy') {
-			ob_start();
-			wpv_get_filter_taxonomy_term_summary_txt($view_settings);
-			$summary .= ob_get_contents();
-			ob_end_clean();
+	function wpv_taxonomy_term_summary_filter( $summary, $post_id, $view_settings ) {
+		if ( isset( $view_settings['query_type'] ) && $view_settings['query_type'][0] == 'taxomomy' && isset( $view_settings['taxonomy_terms_mode'] ) ) {
+			$summary .= wpv_get_filter_taxonomy_term_summary_txt($view_settings);
 		}
 		return $summary;
 	}
@@ -206,19 +241,16 @@ function wpv_render_taxonomy_term_options($args) {
             }
 
         ?>
-		<ul>
-			<li><?php echo __('Taxonomy term: ', 'wpv-views'); ?>
+		<p><?php echo __('Taxonomy term: ', 'wpv-views'); ?>
 			<select class="taxonomy_terms_mode js-wpv-taxonomy-term-mode" name="taxonomy_terms_mode">
 				<?php if($view_settings['taxonomy_terms_mode'] == 'THESE') {$selected = ' selected="selected"';} else {$selected = '';} ?>
 				<option value="THESE"<?php echo $selected; ?>><?php echo __('is one of these', 'wpv-views'); ?></option>
 				<?php if($view_settings['taxonomy_terms_mode'] == 'CURRENT_PAGE') {$selected = ' selected="selected"';} else {$selected = '';}  ?>
 				<option value="CURRENT_PAGE"<?php echo $selected; ?>><?php echo __('set by the current page', 'wpv-views'); ?></option>
 			</select>
-			</li>
+		</p>
 
-			<li class="categorychecklist js-taxonomy-term-checklist">
-				<ul>
-
+			<ul class="categorychecklist js-taxonomy-term-checklist">
 					<?php
 					ob_start();
 					wp_terms_checklist(0, array('taxonomy' => $taxonomy, 'selected_cats' => $view_settings['taxonomy_terms']));
@@ -234,11 +266,8 @@ function wpv_render_taxonomy_term_options($args) {
 					}
 					echo $checklist;
 					?>
-
-				</ul>
-			</li>
-		</ul>
-
+			</ul>
+			
         <?php
 }
 
@@ -270,8 +299,8 @@ function wpv_get_filter_taxonomy_term_summary_txt($view_settings) {
 			}
 			echo $cat_text;
 			echo ')</strong>';
-		} else {
-			echo __('Taxonomy set by the current page', 'wpv-views');
+		} else if ($view_settings['taxonomy_terms_mode'] == 'CURRENT_PAGE') {
+			echo __('Taxonomy is set by the current page', 'wpv-views');
 		}
 
 	$data = ob_get_clean();

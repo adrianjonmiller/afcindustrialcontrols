@@ -8,70 +8,136 @@ add_action('template_redirect', 'wpv_archive_redirect');
 function wpv_archive_redirect() {
 
     global $WPV_view_archive_loop, $WP_Views, $wp_query;
-
     $options = $WP_Views->get_options();
+    $wpa_to_apply = 0;
+    $wpa_slug = '';
 
-    // See if we have a setting for the home page.
-	if ( is_home() && isset($options['view_home-blog-page']) && $options['view_home-blog-page'] > 0) {
-
-        $WPV_view_archive_loop->initialize_archive_loop($options['view_home-blog-page']);
+    // See if we have a WPA for the home page
+	if ( is_home() && isset( $options['view_home-blog-page'] ) && $options['view_home-blog-page'] > 0 ) {
+		$wpa_to_apply = $options['view_home-blog-page'];
+		$wpa_slug = 'view_home-blog-page';
     }
-
-    // check if it's a post type archive.
+    // Check if it's a post type archive and if we have a WPA for it
     if ( is_post_type_archive() ) {
         $post_type_object = $wp_query->get_queried_object();
-
-        // See if we have a setting for this post type
-        if ($post_type_object) {
-            $post_type = $post_type_object->name;
-
-            if (isset($options['view_cpt_' . $post_type]) && $options['view_cpt_' . $post_type] > 0) {
-                $WPV_view_archive_loop->initialize_archive_loop($options['view_cpt_' . $post_type]);
+        if ( $post_type_object ) {
+            if ( isset( $post_type_object->public ) && $post_type_object->public ) {
+				// we need to check the public property because some plugin could change it on an earlier hook, leading to PHP notices
+				$post_type = $post_type_object->name;
+				if ( isset( $options['view_cpt_' . $post_type] ) && $options['view_cpt_' . $post_type] > 0 ) {
+					$wpa_to_apply = $options['view_cpt_' . $post_type];
+					$wpa_slug = 'view_cpt_' . $post_type;
+				}
             }
         }
-
     }
-
-    // check taxonomy loops
+    // Check taxonomy loops
     if ( is_archive() ) {
-
-        /* Taxonomy archives. */
-
         if ( is_tax() || is_category() || is_tag() ) {
-
 			$term = $wp_query->get_queried_object();
-            if ($term && isset($options['view_taxonomy_loop_' . $term->taxonomy]) && $options['view_taxonomy_loop_' . $term->taxonomy] > 0) {
-                $WPV_view_archive_loop->initialize_archive_loop($options['view_taxonomy_loop_' . $term->taxonomy]);
+            if ( $term && isset( $options['view_taxonomy_loop_' . $term->taxonomy] ) && $options['view_taxonomy_loop_' . $term->taxonomy] > 0 ) {
+                $wpa_to_apply = $options['view_taxonomy_loop_' . $term->taxonomy];
+                $wpa_slug = 'view_taxonomy_loop_' . $term->taxonomy;
             }
         }
     }
-
-    if ( is_search()  && isset($options['view_search-page']) && $options['view_search-page'] > 0) {
-        $WPV_view_archive_loop->initialize_archive_loop($options['view_search-page']);
+	// Check other archives
+    if ( is_search()  && isset( $options['view_search-page'] ) && $options['view_search-page'] > 0 ) {
+        $wpa_to_apply = $options['view_search-page'];
+        $wpa_slug = 'view_search-page';
+    }
+    if ( is_author() && isset( $options['view_author-page'] ) && $options['view_author-page'] > 0 ) {
+        $wpa_to_apply = $options['view_author-page'];
+        $wpa_slug = 'view_author-page';
+    }
+	if ( is_year() && isset( $options['view_year-page'] ) && $options['view_year-page'] > 0 ) {
+		$wpa_to_apply = $options['view_year-page'];
+		$wpa_slug = 'view_year-page';
+    }
+	if ( is_month() && isset( $options['view_month-page'] ) && $options['view_month-page'] > 0 ) {
+		$wpa_to_apply = $options['view_month-page'];
+		$wpa_slug = 'view_month-page';
+    }
+	if ( is_day() && isset( $options['view_day-page'] ) && $options['view_day-page'] > 0 ) {
+		$wpa_to_apply = $options['view_day-page'];
+		$wpa_slug = 'view_day-page';
+    }
+    
+    $wpa_to_apply = wpv_force_wordpress_archive( $wpa_to_apply, $wpa_slug );
+    
+    // If there is a WPA to apply, apply it
+    if ( $wpa_to_apply > 0 ) {
+		$WPV_view_archive_loop->initialize_archive_loop( $wpa_to_apply );
     }
 
-    if ( is_author()  && isset($options['view_author-page']) && $options['view_author-page'] > 0) {
-        $WPV_view_archive_loop->initialize_archive_loop($options['view_author-page']);
-    }
+}
 
-    // See if we have a setting for the Year page.
-	if ( is_year() && isset($options['view_year-page']) && $options['view_year-page'] > 0) {
+/**
+* wpv_force_wordpress_archive
+*
+* Applies the wpv_filter_force_wordpress_archive filter to the WPA ID to be displayed
+*
+* @param $wpa_to_apply (integer) the ID of the WPA we want to overwrite
+* @param $wpa_slug (string) [view_cpt_{post_slug}|view_taxonomy_loop_{taxonomy_slug}|view_home-blog-page|view_search-page|view_author-page|view_year-page|view_month-page|view_day-page] the kind of WPA being processed
+*
+* @return (int) the ID of the WPA to apply_filters
+*
+* @since 1.6.0
+*/
 
-        $WPV_view_archive_loop->initialize_archive_loop($options['view_year-page']);
-    }
+function wpv_force_wordpress_archive( $wpa_to_apply, $wpa_slug ) {
+	
+	/**
+	* Filter wpv_filter_force_wordpress_archive
+	*
+	* @param $wpa_to_apply (integer) the ID of the WPA we want to overwrite
+	* @param $wpa_slug (string) [view_cpt_{post_slug}|view_taxonomy_loop_{taxonomy_slug}|view_home-blog-page|view_search-page|view_author-page|view_year-page|view_month-page|view_day-page] the kind of WPA being processed
+	*
+	* @return (int) the ID of the WPA to apply
+	*
+	* @since 1.6.0
+	*/
 
-    // See if we have a setting for the Month page.
-	if ( is_month() && isset($options['view_month-page']) && $options['view_month-page'] > 0) {
+	$wpa_to_apply = apply_filters( 'wpv_filter_force_wordpress_archive', $wpa_to_apply, $wpa_slug );
+	return $wpa_to_apply;
+}
 
-        $WPV_view_archive_loop->initialize_archive_loop($options['view_month-page']);
-    }
+/**
+* wpv_has_wordpress_archive
+*
+* Checks if a given archive page has a WPA assigned to it
+*
+* @param $kind (string) [post|taxonomy|other] the kind of archive to be checked
+* @param $slug (string) the slug of the archive to be checked:
+*    - if $kind is "post" then the slug of the post type
+*    - if $kind is "taxonomy" then the slug of the taxonomy
+*    - if $kind is "other" it can be [home-blog|search|author|year|month|day]
+*
+* @return (int) the ID of the assigned WPA or 0 if there is no one
+*
+* @since 1.6.0
+*/
 
-    // See if we have a setting for the Day page.
-	if ( is_day() && isset($options['view_day-page']) && $options['view_day-page'] > 0) {
-
-        $WPV_view_archive_loop->initialize_archive_loop($options['view_day-page']);
-    }
-
+function wpv_has_wordpress_archive( $kind, $slug ) {
+	global $WP_Views;
+	$return = 0;
+	$identifier = '';
+	$options = $WP_Views->get_options();
+	switch ( $kind ) {
+		case 'post':
+			$identifier = 'view_cpt_' . $slug;
+			break;
+		case 'taxonomy':
+			$identifier = 'view_taxonomy_loop_' . $slug;
+			break;
+		case 'other':
+			$identifier = 'view_' . $slug . '-page';
+			break;
+	}
+	if ( !empty( $identifier ) && isset( $options[$identifier] ) ) {
+		$return = $options[$identifier];
+	}
+	return $return;
 }
 
 
@@ -252,7 +318,8 @@ class WP_Views_archive_loops{
                        'month-page' => __('Month archives', 'wpv-views'),
                        'day-page' => __('Day archives', 'wpv-views'));
 
-        $post_types = get_post_types(array('public'=>true), 'objects');
+        // Only offer loops for post types that already have an archive
+        $post_types = get_post_types(array('public'=>true, 'has_archive' => true), 'objects');
         foreach($post_types as $post_type) {
 			if (!in_array($post_type->name, array('post', 'page', 'attachment'))) {
 				$type = 'cpt_' . $post_type->name;
@@ -715,104 +782,148 @@ class WP_Views_archive_loops{
         <?php
     }
 
-    function _create_view_archive_popup($view_id = 0) {
+    function _create_view_archive_popup( $view_id = 0 ) {
         global $WP_Views;
         $options = $WP_Views->get_options();
         $loops = $this->_get_post_type_loops();
-        $options = $this->_view_edit_options($view_id, $options);
-
+        $options = $this->_view_edit_options($view_id, $options);// TODO check if we just need the $options above
+        $asterisk = ' <span style="color:red">*</span>';
+		$asterisk_explanation = __( '<span style="color:red">*</span> A different WordPress Archive is already assigned to this item', 'wpv-views' );
         ?>
         <div class="wpv-dialog wpv-dialog-change js-wpv-dialog-change">
                 <div class="wpv-dialog-header">
-                    <h2><?php if ($view_id==0) _e('Add new Archive'); else _e('What content will this View be used for?','wpv-views'); ?></h2>
+                    <h2><?php if ( $view_id == 0 ) _e( 'Add new WordPress Archive', 'wpv-views' ); else _e( 'What loop will this Archive be used for?','wpv-views' ); ?></h2>
                     <i class="icon-remove js-dialog-close"></i>
                 </div>
                 <div class="wpv-dialog-content">
 		<form id="wpv-create-archive-view-form">
                     <?php wp_nonce_field('wpv_view_edit_nonce', 'wpv_view_edit_nonce'); ?>
                     <input type="hidden" value="<?php echo $view_id; ?>" name="wpv-archive-view-id" />
-                    <?php if ($view_id==0): ?>
+                    <?php if ( $view_id == 0 ): ?>
                     <p>
-                        <strong><?php _e('What content will this View be used for?','wpv-views') ?></strong>
+                        <strong><?php _e('What loop will this Archive be used for?','wpv-views') ?></strong>
                     </p>
                     <?php endif; ?>
                     <?php
-                        foreach($loops as $loop => $loop_name) {
-                            foreach ($options as $opt_id=> $opt_name) {
-                                if (preg_match('/'.$loop.'/', $opt_id) && $view_id==0) {
-                                    unset($loops[$loop]);
-                                    continue 2;
-                                }
-                            }
-                            //Juan, please review this part. Archive must have custom post types. Request by Bruce.
-                            /*if (preg_match('/^cpt_(.*)/', $loop, $out)) {
-                                unset($loops[$loop]);
-                                continue;
-                            }*/
-                        }
-                    ?>
-
-                    <?php if (!empty($loops)) : ?>
-                    <p><?php _e('Post type loops', 'wpv-views'); ?></p>
+                        $show_asterisk_explanation = false;
+                        $loops = array('home-blog-page' => __('Home/Blog', 'wpv-views'),
+						'search-page' => __('Search results', 'wpv-views'),
+						'author-page' => __('Author archives', 'wpv-views'),
+						'year-page' => __('Year archives', 'wpv-views'),
+						'month-page' => __('Month archives', 'wpv-views'),
+						'day-page' => __('Day archives', 'wpv-views'));
+					?>
+					
+					<h3><?php _e('WordPress Native Archives', 'wpv-views'); ?></h3>
                     <ul>
                         <?php foreach($loops as $loop => $loop_name): ?>
-                            <?php $checked = ( isset($options['view_' . $loop]) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : ''; ?>
+                            <?php
+                            $show_asterisk = false;
+                            $checked = ( isset($options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
+                            if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+								$show_asterisk = true;
+								$show_asterisk_explanation = true;
+                            }
+                            ?>
                             <li>
-                                <label>
-                                    <input type="checkbox" <?php echo $checked; ?> name="wpv-view-loop-<?php echo $loop; ?>" /> <?php echo $loop_name; ?>
-                                </label>
+								<input type="checkbox" <?php echo $checked; ?> id="wpv-view-loop-<?php echo $loop; ?>" name="wpv-view-loop-<?php echo $loop; ?>" />
+								<label for="wpv-view-loop-<?php echo $loop; ?>"><?php echo $loop_name; echo $show_asterisk ? $asterisk : '';  ?></label>
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                    <?php if ( $show_asterisk_explanation ) { ?>
+                    <span class="wpv-asterisk-explanation">
+						<?php echo $asterisk_explanation; ?>
+                    </span>
+                    <?php } ?>
+                    <?php
+						$pt_loops = array();
+						$show_asterisk_explanation = false;
+						// Only offer loops for post types that already have an archive
+						$post_types = get_post_types( array( 'public' => true, 'has_archive' => true), 'objects' );
+						foreach ( $post_types as $post_type ) {
+							if ( !in_array( $post_type->name, array( 'post', 'page', 'attachment' ) ) ) {
+								$type = 'cpt_' . $post_type->name;
+								$name = $post_type->labels->name;
+								$pt_loops[$type] = $name;
+							}
+						}
+                    ?>
+
+                    <?php if ( !empty( $pt_loops ) ) : ?>
+                    <h3><?php _e( 'Post Type Archives', 'wpv-views' ); ?></h3>
+                    <ul>
+                        <?php foreach ( $pt_loops as $loop => $loop_name ): ?>
+                            <?php
+                            $show_asterisk = false;
+                            $checked = ( isset($options['view_' . $loop] ) && $options['view_' . $loop] == $view_id ) ? ' checked="checked"' : '';
+                            if ( isset( $options['view_' . $loop] ) && $options['view_' . $loop] != $view_id ) {
+								$show_asterisk = true;
+								$show_asterisk_explanation = true;
+                            }
+                            ?>
+                            <li>
+								<input type="checkbox" <?php echo $checked; ?> id="wpv-view-loop-<?php echo $loop; ?>" name="wpv-view-loop-<?php echo $loop; ?>" />
+								<label for="wpv-view-loop-<?php echo $loop; ?>"><?php echo $loop_name; echo $show_asterisk ? $asterisk : ''; ?></label>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if ( $show_asterisk_explanation ) { ?>
+                    <span class="wpv-asterisk-explanation">
+						<?php echo $asterisk_explanation; ?>
+                    </span>
+                    <?php } ?>
                     <?php endif; ?>
 
                     <?php
+                    $show_asterisk_explanation = false;
                     $taxonomies = get_taxonomies('', 'objects');
                     $exclude_tax_slugs = array();
-			$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
+					$exclude_tax_slugs = apply_filters( 'wpv_admin_exclude_tax_slugs', $exclude_tax_slugs );
                         foreach ($taxonomies as $category_slug => $category):
-				if ( in_array($category_slug, $exclude_tax_slugs ) ) {
-					unset($taxonomies[$category_slug]);
-					continue;
-				}
-				if ( !$category->show_ui ) {
-					unset($taxonomies[$category_slug]);
-					continue; // Only show taxonomies with show_ui set to TRUE
-				}
-                            foreach ($options as $opt_id=> $opt_name) {
-                                if (preg_match('/'.$category_slug.'/', $opt_id) && $view_id==0) {
-                                    unset($taxonomies[$category_slug]);
-                                    continue 2;
-                                }
-                            }
+							if ( in_array($category_slug, $exclude_tax_slugs ) ) {
+								unset($taxonomies[$category_slug]);
+								continue;
+							}
+						if ( !$category->show_ui ) {
+							unset($taxonomies[$category_slug]);
+							continue; // Only show taxonomies with show_ui set to TRUE
+						}
                         endforeach;
                     ?>
 
-                    <?php if (!empty($taxonomies)): ?>
-                    <p><?php _e('Taxonomy loops', 'wpv-views'); ?></p>
+                    <?php if ( !empty( $taxonomies ) ): ?>
+                    <h3><?php _e('Taxonomy Archives', 'wpv-views'); ?></h3>
                     <ul>
-                        <?php foreach ($taxonomies as $category_slug => $category): ?>
+                        <?php foreach ( $taxonomies as $category_slug => $category ): ?>
                             <?php
-
-                                //if ($category_slug == 'nav_menu' || $category_slug == 'link_category' || $category_slug == 'post_format') {
                                 $name = $category->name;
-                                $checked = (isset ($options['view_taxonomy_loop_' . $name ]) && $options['view_taxonomy_loop_' . $name ] == $view_id) ? ' checked="checked"' : '';
-                            ?>
+                                $show_asterisk = false;
+								$checked = ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] == $view_id ) ? ' checked="checked"' : '';
+								if ( isset( $options['view_taxonomy_loop_' . $name ] ) && $options['view_taxonomy_loop_' . $name ] != $view_id ) {
+									$show_asterisk = true;
+									$show_asterisk_explanation = true;
+								}
+							?>
                             <li>
-                                <label>
-                                    <input type="checkbox" <?php echo $checked; ?> name="wpv-view-taxonomy-loop-<?php echo $name; ?>" /> <?php echo $category->labels->name; ?>
-                                </label>
+								<input type="checkbox" <?php echo $checked; ?> id="wpv-view-taxonomy-loop-<?php echo $name; ?>" name="wpv-view-taxonomy-loop-<?php echo $name; ?>" />
+                                <label for="wpv-view-taxonomy-loop-<?php echo $name; ?>"><?php echo $category->labels->name; echo $show_asterisk ? $asterisk : ''; ?></label>
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                    <?php if ( $show_asterisk_explanation ) { ?>
+                    <span class="wpv-asterisk-explanation">
+						<?php echo $asterisk_explanation; ?>
+                    </span>
+                    <?php } ?>
                     <?php endif; ?>
 
-                    <?php if ($view_id==0): ?>
+                    <?php if ( $view_id == 0 ): ?>
                     <p>
-                        <strong><label for="wpv-new-archive-name"><?php _e('Name this View','wpv-views'); ?></label></strong>
+                        <strong><label for="wpv-new-archive-name"><?php _e('Name this WordPress Archive','wpv-views'); ?></label></strong>
                     </p>
                     <p>
-                        <input type="text" value="" class="js-wpv-new-archive-name wpv-new-archive-name" placeholder="<?php _e('Content archive name','wpv-views') ?>" name="wpv-new-archive-name">
+                        <input type="text" value="" class="js-wpv-new-archive-name wpv-new-archive-name" placeholder="<?php _e('WordPress Archive name','wpv-views') ?>" name="wpv-new-archive-name">
                     </p>
                     <?php endif; ?>
                     <div class="js-error-container"></div>
@@ -820,14 +931,14 @@ class WP_Views_archive_loops{
                 </div>
                 <div class="wpv-dialog-footer">
                     <button class="button-secondary js-dialog-close" type="button" name="wpv-archive-view-cancel"><?php _e('Cancel', 'wpv-views'); ?></button>
-                    <?php if ($view_id==0) { ?>
+                    <?php if ( $view_id == 0 ) { ?>
                     <button class="button-primary js-wpv-add-archive" type="button" name="wpv-archive-view-ok" data-error="<?php echo htmlentities( __('A WordPress Archive with that name already exists. Please use another name.', 'wpv-views'), ENT_QUOTES ); ?>" data-url="<?php echo admin_url( 'admin.php?page=view-archives-editor&amp;view_id='); ?>" disabled="disabled">
                         <?php _e('Add new Archive', 'wpv-views'); ?>
                     </button>
                     <?php } else { ?>
-			<button class="button-primary js-wpv-update-archive" type="button" name="wpv-archive-view-ok">
-			<?php  _e('Accept', 'wpv-views'); ?>
-			</button>
+					<button class="button-primary js-wpv-update-archive" type="button" name="wpv-archive-view-ok">
+						<?php  _e('Accept', 'wpv-views'); ?>
+					</button>
                     <?php } ?>
                 </div>
         </div>
@@ -921,14 +1032,20 @@ class WP_Views_archive_loops{
         }
     }
 
+    // TODO this clearing function deletes all View options but the ones starting with wpv
+    // and runs every single time a WPA is updated
+    // it loops through every View setting too: it's too expensive
+    // We need a better way of clearing the Views settings for loops about WPA and CT when the related objects have been deleted
+    // MAYBE it would be better to check on render time, and if now available then delete the record, and remove all this clearing function altogether
     static function clear_options_data(&$options) {
         global $wpdb;
 
         foreach ($options as $k=>$v) {
-
-            $post_exists = $wpdb->get_row("SELECT * FROM $wpdb->posts WHERE id = '" . $v . "' AND post_type IN ('view','view-template')", 'ARRAY_A');
-            if(!$post_exists){
-                unset($options[$k]);
+			if ( substr( $k, 0, 3 ) != "wpv" ) {
+				$post_exists = $wpdb->get_row("SELECT * FROM {$wpdb->posts} WHERE id = '" . $v . "' AND post_type IN ('view','view-template')", 'ARRAY_A');
+				if(!$post_exists){
+					unset($options[$k]);
+				}
             }
         }
     }

@@ -34,25 +34,29 @@ require_once WPV_PATH_EMBEDDED . '/common/visual-editor/editor-addon.class.php';
 
 function views_redesign_html() {
 	global $WP_Views, $post, $views_edit_help;
+	
 	if ( isset( $_GET['view_id'] ) && is_numeric( $_GET['view_id'] ) ) {
-	    do_action('views_edit_screen');
+		do_action('views_edit_screen');
 		$view_id = (int)$_GET['view_id'];
 		$view = get_post( $view_id );
 		if ( null == $view ) {
-			wp_die( __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?') );
+			wp_die( '<div class="wpv-setting-container"><p class="toolset-alert toolset-alert-error">' . __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?', 'wpv-views') . '</p></div>' );
 		} elseif ( 'view'!= $view->post_type ) {
-			wp_die( __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?') );
+			wp_die( '<div class="wpv-setting-container"><p class="toolset-alert toolset-alert-error">' . __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?', 'wpv-views') . '</p></div>' );
 		} else {
 			$view_settings = $WP_Views->get_view_settings($_GET['view_id']);
 			$view_layout_settings = get_post_meta($_GET['view_id'], '_wpv_layout_settings', true);
 			if (isset($view_settings['view-query-mode']) && ('normal' ==  $view_settings['view-query-mode'])) {
 				$post = $view;
+				if ( get_post_status( $view_id ) == 'trash' ) {
+					wp_die( '<div class="wpv-setting-container"><p class="toolset-alert toolset-alert-error">' . __('You can’t edit this View because it is in the Trash. Please restore it and try again.', 'wpv-views') . '</p></div>' );
+				}
 			} else {
-				wp_die( __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?') );
+				wp_die( '<div class="wpv-setting-container"><p class="toolset-alert toolset-alert-error">' . __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?', 'wpv-views') . '</p></div>' );
 			}
 		}
 	} else {
-		wp_die( __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?') );
+		wp_die( '<div class="wpv-setting-container"><p class="toolset-alert toolset-alert-error">' . __('You attempted to edit a View that doesn&#8217;t exist. Perhaps it was deleted?', 'wpv-views') . '</p></div>' );
 	}
 	?>
 	<?php
@@ -61,7 +65,7 @@ function views_redesign_html() {
 	*/
 	?>
 	<div id="screen-meta-dup" class="metabox-prefs js-screen-meta-dup hidden">
-		<div id="screen-options-wrap" aria-label="<?php echo htmlentities( __('Screen Options Tab'), ENT_QUOTES ); ?>" class="wpv-screen-options js-wpv-show-hide-container" data-pagneedsfilter="<?php echo htmlentities( __('Pagination requires the Filter HTML section to be visible.', 'wpv-views'), ENT_QUOTES ); ?>" data-unclickable="<?php echo htmlentities( __('This section has unsaved changes, so you can not hide it', 'wpv-views'), ENT_QUOTES ); ?>">
+		<div id="screen-options-wrap" aria-label="<?php echo htmlentities( __('Screen Options Tab'), ENT_QUOTES ); ?>" class="wpv-screen-options js-wpv-show-hide-container" data-dpsneedsfilter="<?php echo htmlentities( __('The parametric search settings section has unsaved changes, so you can not hide it', 'wpv-views'), ENT_QUOTES ); ?>" data-pagneedsfilter="<?php echo htmlentities( __('Pagination requires the Filter HTML section to be visible.', 'wpv-views'), ENT_QUOTES ); ?>" data-unclickable="<?php echo htmlentities( __('This section has unsaved changes, so you can not hide it', 'wpv-views'), ENT_QUOTES ); ?>">
 			<h5><?php _e('Show on screen', 'wpv-views');?></h5>
 			<?php
 				$sections = array();
@@ -172,6 +176,7 @@ function views_redesign_html() {
 						'pagination' => __('Pagination', 'wpv-views'),
 						'slider' => __('Slider', 'wpv-views'),
 						'parametric' => __('Parametric', 'wpv-views'),
+						'bootstrap-grid' => __('Bootstrap Grid', 'wpv-views'),
 						'full' => __('Full', 'wwpv-views')
 					);
 					foreach ($purpose_options as $opt => $opt_name) { ?>
@@ -199,10 +204,24 @@ function views_redesign_html() {
 	*/
 	?>
 	<div class="wrap toolset-views">
-	<input id="post_ID" class="js-post_ID" type="hidden" value="<?php echo $view_id; ?>" />
+	<input id="post_ID" class="js-post_ID" type="hidden" value="<?php echo $view_id; ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_edit_general_nonce' ); ?>" />
 	<div id="icon-edit" class="icon32 icon32-posts-post"><br></div>
 	<h2><?php echo __('Edit View','wpv-views'); ?></h2>
-		<div class="wpv-save-all wpv-setting-container">
+		<div class="wpv-settings-save-all wpv-setting-container js-wpv-general-actions-bar">
+			<?php if ( isset( $_GET['layout_id'] ) && is_numeric( $_GET['layout_id'] ) ) {
+				$layout_id = (int) $_GET['layout_id'];
+				$layout_url = admin_url( 'admin.php?page=dd_layouts_edit&layout_id=' . $layout_id . '&action=edit' );?>
+				<div class="wpv-settings-header">
+					<a href="<?php echo $layout_url; ?>" class="button-primary button button-large js-wpv-layout-origin"><i class="icon-chevron-left"></i> <?php _e('Return to the Layout', 'wpv-views'); ?></a>
+				</div>
+			<?php } ?>
+			<?php if ( isset( $_GET['return-to-layout'] ) && $_GET['return-to-layout'] == 1  ): ?>
+				<div class="wpv-settings-header">
+					<p><?php _e('Done editing this View?', 'wpv-views'); ?></p>
+					<a href="#" class="button-primary button button-large" onclick="window.close(); return false;"><i class="icon-chevron-left"></i> <?php _e('Close this window and return to the Layout', 'wpv-views'); ?></a>
+				</div>
+			<?php endif; ?>
+
 			<div class="wpv-setting">
 				<p class="update-button-wrap">
 					<button class="button-secondary button button-large js-wpv-view-save-all" disabled="disabled" data-success="<?php echo htmlentities( __('View saved', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('View not saved', 'wpv-views'), ENT_QUOTES ); ?>"><?php _e('Save all sections at once', 'wpv-views'); ?></button>
@@ -210,41 +229,53 @@ function views_redesign_html() {
 			</div>
 		</div>
 		<input type="hidden" name="_wpv_settings[view-query-mode]" value="normal" />
-		<div class="wpv-setting-container wpv-settings-title-and-desc">
-			<div class="wpv-settings-header">
-				<h3>
-					<?php _e( 'Title and description', 'wpv-views' ) ?>
-					<i class="icon-question-sign js-display-tooltip" data-header="<?php echo $views_edit_help['title_and_description']['title'] ?>" data-content="<?php echo $views_edit_help['title_and_description']['content'] ?>"></i>
-				</h3>
-			</div>
-			<div class="wpv-setting">
+		<div class="wpv-title-section">
+			<div class="wpv-setting-container wpv-settings-title-and-desc">
+				<div class="wpv-settings-header">
+					<h3>
+						<?php _e( 'Title and description', 'wpv-views' ) ?>
+						<i class="icon-question-sign js-display-tooltip" data-header="<?php echo $views_edit_help['title_and_description']['title'] ?>" data-content="<?php echo $views_edit_help['title_and_description']['content'] ?>"></i>
+					</h3>
+				</div>
+				<div class="wpv-setting">
 
-				<div id="titlediv">
-					<div id="titlewrap">
-						<label class="screen-reader-text js-title-reader" id="title-prompt-text" for="title"><?php _e('Enter title here','wp-views'); ?></label>
-						<input id="title" class="js-title" type="text" name="post_title" size="30" value="<?php echo get_the_title( $view_id ); ?>" id="title" autocomplete="off">
+					<div id="titlediv">
+						<div id="titlewrap">
+							<label class="screen-reader-text js-title-reader" id="title-prompt-text" for="title"><?php _e('Enter title here','wp-views'); ?></label>
+							<input id="title" class="js-title" type="text" name="post_title" size="30" value="<?php echo get_the_title( $view_id ); ?>" id="title" autocomplete="off">
+						</div>
 					</div>
-				</div>
-				<?php
-					$view_description = get_post_meta($_GET['view_id'], '_wpv_description', true);
-				?>
-				<button class="js-wpv-description-toggle button-secondary<?php echo ( isset( $view_description ) && !empty( $view_description ) ) ? ' hidden' : ''; ?>" ><?php _e('Add description', 'wpv-views'); ?></button>
 
-				<div class="js-wpv-description-container wpv-description-container<?php echo ( isset( $view_description ) && !empty( $view_description ) ) ? '' : ' hidden'; ?>">
-					<p>
-						<label for="wpv-description"><?php _e('Describe this View', 'wpv-views' ) ?></label>
+					<div id="edit-slug-box" class="js-wpv-slug-container">
+						<label for="wpv-slug"><?php _e('Slug of this View', 'wpv-views'); ?>
+						<input id="wpv-slug" class="js-wpv-slug" type="text" value="<?php echo esc_attr( $view->post_name ); ?>" />
+						 &bull; <button class="button-secondary js-wpv-change-view-status icon-trash" data-statusto="trash" data-success="<?php echo htmlentities( __('View moved to trash', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('View not moved to trash', 'wpv-views'), ENT_QUOTES ); ?>" data-redirect="<?php echo admin_url( 'admin.php?page=views'); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_change_status' ); ?>"> <?php _e('Move to trash', 'wpv-views'); ?></button>
+					</div>
+
+					<?php
+						$view_description = get_post_meta($_GET['view_id'], '_wpv_description', true);
+					?>
+
+					<p<?php echo ( isset( $view_description ) && !empty( $view_description ) ) ? ' class="hidden"' : ''; ?>>
+						<button class="js-wpv-description-toggle button-secondary" ><?php _e('Add description', 'wpv-views'); ?></button>
 					</p>
-					<p>
-						<textarea id="wpv-description" class="js-wpv-description" name="_wpv_settings[view_description]" cols="72" rows="4"><?php echo ( isset( $view_description ) ) ? esc_html($view_description) : ''; ?></textarea>
+
+					<div class="js-wpv-description-container wpv-description-container<?php echo ( isset( $view_description ) && !empty( $view_description ) ) ? '' : ' hidden'; ?>">
+						<p>
+							<label for="wpv-description"><?php _e('Describe this View', 'wpv-views' ) ?></label>
+						</p>
+						<p>
+							<textarea id="wpv-description" class="js-wpv-description" name="_wpv_settings[view_description]" cols="72" rows="4"><?php echo ( isset( $view_description ) ) ? esc_html($view_description) : ''; ?></textarea>
+						</p>
+					</div>
+
+					<p class="update-button-wrap">
+						<button data-success="<?php echo htmlentities( __('Title and description updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Title and description not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_title_description_nonce' ); ?>" class="js-wpv-title-description-update button-secondary" disabled="disabled"><?php _e('Update', 'wpv-views'); ?></button>
 					</p>
+
 				</div>
-
-				<p class="update-button-wrap">
-					<button data-success="<?php echo htmlentities( __('Title and description updated', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('Title and description not saved', 'wpv-views'), ENT_QUOTES ); ?>" data-nonce="<?php echo wp_create_nonce( 'wpv_view_title_description_nonce' ); ?>" class="js-wpv-title-description-update button-secondary" disabled="disabled"><?php _e('Update', 'wpv-views'); ?></button>
-				</p>
-
 			</div>
-		</div>
+		</div> <!-- .wpv-title-section -->
 
 		<div class="wpv-query-section">
 			<h3 class="wpv-section-title"><?php _e('The query section determines what content the View loads from the database','wpv-views') ?></h3>
@@ -287,23 +318,27 @@ function views_redesign_html() {
 			?>
 			<?php do_action('view-editor-section-layout', $view_settings, $view_layout_settings, $view_id); ?>
 			<?php do_action('view-editor-section-extra', $view_settings, $view_id); ?>
-			
-			<div class="wpv-save-all wpv-setting-container">
+
+			<div class="wpv-settings-save-all wpv-setting-container">
 				<div class="wpv-setting">
 					<p class="update-button-wrap">
 						<button class="button-secondary button button-large js-wpv-view-save-all" disabled="disabled" data-success="<?php echo htmlentities( __('View saved', 'wpv-views'), ENT_QUOTES ); ?>" data-unsaved="<?php echo htmlentities( __('View not saved', 'wpv-views'), ENT_QUOTES ); ?>"><?php _e('Save all sections at once', 'wpv-views'); ?></button>
 					</p>
 				</div>
 			</div>
-			
+
 		</div>
 
 		<div class="wpv-help-section">
 			<div class="js-show-toolset-message" data-tutorial-button-text="<?php echo htmlentities( __('Learn how to display Views','wpv-views'), ENT_QUOTES ) ?>" data-tutorial-button-url="http://wp-types.com/documentation/user-guides/views/#2.5">
-		        <h2><?php _e('Done setting up this View?','wpv-views') ?></h2>
+				<h2><?php _e('Done setting up this View?','wpv-views') ?></h2>
 			</div>
 		</div>
-
+		<script type="text/javascript">
+			jQuery(function($){
+				jQuery('li.current a').attr('href',jQuery('li.current a').attr('href')+'&view_id=<?php echo $view_id?>');
+			});
+		</script>
 		<?php
 		/*
 		* Output (layout) type - TODO review this https://icanlocalize.basecamphq.com/projects/7393061-toolset/todo_items/162512599/comments - Priority 10 - To remove

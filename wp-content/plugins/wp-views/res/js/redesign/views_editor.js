@@ -35,11 +35,9 @@ jQuery(document).ready(function($){
 	});
 
 
-	// query option
+	// query option - on change show or hide relevant parts of some sections and toolbar buttons
 
-	view_query_type_options();
-
-	$('select[name="_wpv_settings\\[query_type\\]\\[\\]"]').change(function(e){
+	$('input:radio.js-wpv-query-type').change(function(e){
 		view_query_type_options();
 	});
 
@@ -52,6 +50,8 @@ jQuery(document).ready(function($){
 		var $editor = $('.js-code-editor').filter(function() {
 			return $this.data('target') ===  $(this).data('name');
 		});
+		
+		$this.removeClass('code-editor-textarea-full code-editor-textarea-empty');
 
 		$editor.toggleClass('closed');
 
@@ -66,6 +66,11 @@ jQuery(document).ready(function($){
 			else{
 				$('.js-wpv-'+ z_el +'-old-place').append($elem);
 				$editor.find('.js-code-editor-toolbar ul li.wpv-'+ z_el +'-button-moved').remove();
+				if ( wpv_extra_textarea_toggle_flag(z_el) ) {
+					$this.addClass('code-editor-textarea-full');
+				} else {
+					$this.addClass('code-editor-textarea-empty');
+				}
 			}
 		}
 
@@ -153,20 +158,104 @@ jQuery(document).ready(function($){
 	}
 });
 
+function wpv_extra_textarea_toggle_flag(element) {
+	var full = false;
+	if ( element == 'filter-css-editor' ) {
+		full = ( codemirror_views_query_css.getValue() != '' );
+	} else if ( element == 'filter-js-editor' ) {
+		full = ( codemirror_views_query_js.getValue() != '' );
+	} else if ( element == 'layout-css-editor' ) {
+		full = ( codemirror_views_layout_css.getValue() != '' );
+	} else if ( element == 'layout-js-editor' ) {
+		full = ( codemirror_views_layout_js.getValue() != '' );
+	}
+	return full;
+}
+
+// Change status
+
+jQuery(document).on('click', '.js-wpv-change-view-status', function(e){
+	e.preventDefault();
+	var newstatus = jQuery(this).data('statusto'),
+		    spinnerContainer = jQuery('<div class="spinner ajax-loader">').insertAfter(jQuery(this)).show(),
+		    thiz = jQuery(this),
+		    update_message = jQuery(this).data('success'),
+		    error_message = jQuery(this).data('unsaved'),
+		    redirect_url = jQuery(this).data('redirect');
+		    thiz.prop('disabled', true).removeClass('button-primary').addClass('button-secondary');
+		    if (newstatus == 'trash') {
+			    message_where = jQuery('.js-wpv-slug-container');
+		    } else {
+			    message_where = thiz.parent();
+		    }
+		    var data = {
+			    action: 'wpv_view_change_status',
+			    id: jQuery('.js-post_ID').val(),
+			    newstatus: newstatus,
+			    wpnonce : jQuery(this).data('nonce')
+		    };
+		    jQuery.ajax({
+			    async:false,
+		  type:"POST",
+		  url:ajaxurl,
+		  data:data,
+		  success:function(response){
+			  if ( (typeof(response) !== 'undefined') && (response == data.id)) {
+				  if (newstatus == 'trash') {
+					  jQuery(location).attr('href',redirect_url);
+				  }
+			  } else {
+				  message_where.wpvToolsetMessage({
+					  text:error_message,
+				      type:'error',
+				      inline:true,
+				      stay:true
+				  });
+				  console.log( "Error: AJAX returned ", response );
+			  }
+		  },
+		  error: function (ajaxContext) {
+			  thiz.prop('disabled', false);
+			  spinnerContainer.remove();
+			  message_where.wpvToolsetMessage({
+				  text:error_message,
+				  type:'error',
+				  inline:true,
+				  stay:true
+			  });
+			  console.log( "Error: ", ajaxContext.responseText );
+		  },
+		  complete: function() {
+			  
+		  }
+		    });
+});
 
 function view_query_type_options(){
-	var query_type_selected = jQuery('select[name="_wpv_settings\\[query_type\\]\\[\\]"]').val();
+	var query_type_selected = jQuery('input:radio.js-wpv-query-type:checked').val();
 	if ('posts' == query_type_selected) {
 		jQuery('.wpv-settings-query-type-posts').fadeIn('fast');
 		jQuery('.wpv-settings-query-type-taxonomy').hide();
+		jQuery('.wpv-settings-query-type-users').hide();
 		jQuery('.wpv-vicon-for-posts').removeClass('hidden');
+		jQuery('.wpv-vicon-for-users').addClass('hidden');
 		jQuery('.wpv-vicon-for-taxonomy').addClass('hidden');
 	}
 	if ('taxonomy' == query_type_selected) {
 		jQuery('.wpv-settings-query-type-posts').hide();
+		jQuery('.wpv-settings-query-type-users').hide();
 		jQuery('.wpv-settings-query-type-taxonomy').fadeIn('fast');
 		jQuery('.wpv-vicon-for-taxonomy').removeClass('hidden');
 		jQuery('.wpv-vicon-for-posts').addClass('hidden');
+		jQuery('.wpv-vicon-for-users').addClass('hidden');
+	}
+	if ('users' == query_type_selected) {
+		jQuery('.wpv-settings-query-type-users').fadeIn('fast');
+		jQuery('.wpv-settings-query-type-posts').hide();
+		jQuery('.wpv-settings-query-type-taxonomy').hide();
+		jQuery('.wpv-vicon-for-taxonomy').addClass('hidden');
+		jQuery('.wpv-vicon-for-posts').addClass('hidden');
+		jQuery('.wpv-vicon-for-users').removeClass('hidden');	
 	}
 }
 
@@ -176,7 +265,7 @@ function view_query_type_options(){
 
 // Fix when opening Help section
 // This is caused because we are adding our Screen Options in an artificial way
-// so when opening the Hellp tab it displays all elements inside the tab container
+// so when opening the Help tab it displays all elements inside the tab container
 
 jQuery(document).on('click', '#screen-meta-links #contextual-help-link', function() {
 	jQuery('.metabox-prefs .js-wpv-show-hide-container').hide();
@@ -224,6 +313,9 @@ function wpv_show_hide_section_change(checkbox) {
 		var metasection = checkbox.parents('.js-wpv-show-hide-section').data('metasection');
 		jQuery('.' + metasection).show();
 		jQuery('.js-wpv-settings-' + section).fadeIn('fast');
+		if ( 'filter-extra' == section ) {
+			jQuery('.js-wpv-settings-container-dps-filter').fadeIn('fast');
+		}
 		input_value.val('on');
 		if ('filter-extra' == section) {
 			codemirror_views_query.refresh();
@@ -232,6 +324,11 @@ function wpv_show_hide_section_change(checkbox) {
 		}
 		if ('content' == section) {
 			codemirror_views_content.refresh();
+		}
+		if ('layout-extra' == section) {
+			codemirror_views_layout.refresh();
+			codemirror_views_layout_css.refresh();
+			codemirror_views_layout_js.refresh();
 		}
 		if ('pagination' == section) {
 			if ('checked' != jQuery('.js-wpv-show-hide-filter-extra').attr('checked')) {
@@ -261,8 +358,19 @@ function wpv_show_hide_section_change(checkbox) {
 								 inline:true,
 								 stay:true
 			});
+		} else if ('filter-extra' == section && jQuery('.js-wpv-settings-container-dps-filter').find('.js-wpv-section-unsaved').length > 0 ) {
+			jQuery('.js-wpv-show-hide-filter-extra').attr('checked', true);
+			jQuery('.js-wpv-show-hide-update').parent().wpvToolsetMessage({
+				text:jQuery('.js-wpv-show-hide-container').data('dpsneedsfilter'),
+										      type:'info',
+								 inline:true,
+								 stay:true
+			});
 		} else {
 			jQuery('.js-wpv-settings-' + section).hide();
+			if ( 'filter-extra' == section ) {
+				jQuery('.js-wpv-settings-container-dps-filter').hide();
+			}
 			var metasection = checkbox.parents('.js-wpv-show-hide-section').data('metasection');
 			if (
 				0 == checkbox.parents('.js-wpv-show-hide-section').find('.js-wpv-show-hide:checked').length &&
@@ -384,11 +492,12 @@ jQuery(document).on('change', '.js-view-purpose', function(){
 	var purpose = jQuery(this).val();
 	jQuery('.js-wpv-show-hide-help').each(function(){
 		var state = jQuery(this).attr('checked'),
-					      metasection = jQuery(this).data('metasection');
-					      jQuery('.js-metasection-help-' + metasection).hide();
-					      if ('checked' == state) {
-	jQuery('.js-for-view-purpose-' + purpose + '.js-metasection-help-' + metasection).show();
-					      }
+			metasection = jQuery(this).data('metasection');
+	
+		jQuery('.js-metasection-help-' + metasection).hide();
+		if ('checked' == state) {
+			jQuery('.js-for-view-purpose-' + purpose + '.js-metasection-help-' + metasection).show();
+		}
 	});
 	wpv_set_sections_for_view_purpose(purpose);
 });
@@ -396,47 +505,35 @@ jQuery(document).on('change', '.js-view-purpose', function(){
 // Given a View purpose, set the open and closed sections
 
 function wpv_set_sections_for_view_purpose(purpose) {
+	var all_sections = Array('query-options', 'limit-offset', 'content', 'pagination', 'filter-extra', 'layout-extra', 'pagination');
+	var hide_sections = Array();
 	if ('all' == purpose) {
-		jQuery('.js-wpv-show-hide-query-options, .js-wpv-show-hide-limit-offset, .js-wpv-show-hide-content').each(function(){
-			jQuery(this).attr('checked', true);
-			wpv_show_hide_section_change(jQuery(this));
-		});
-		jQuery('.js-wpv-show-hide-pagination, .js-wpv-show-hide-filter-extra').each(function(){
-			jQuery(this).attr('checked', false);
-			wpv_show_hide_section_change(jQuery(this));
-		});
+		hide_sections = Array('pagination', 'filter-extra');
 	} else if ('pagination' == purpose) {
-		jQuery('.js-wpv-show-hide-query-options, .js-wpv-show-hide-pagination, .js-wpv-show-hide-filter-extra, .js-wpv-show-hide-content').each(function(){
-			jQuery(this).attr('checked', true);
-			wpv_show_hide_section_change(jQuery(this));
-		});
-		jQuery('.js-wpv-show-hide-limit-offset').each(function(){
-			jQuery(this).attr('checked', false);
-			wpv_show_hide_section_change(jQuery(this));
-		});
+		hide_sections = Array('limit-offset');
 	} else if ('slider' == purpose) {
-		jQuery('.js-wpv-show-hide-query-options, .js-wpv-show-hide-pagination, .js-wpv-show-hide-filter-extra, .js-wpv-show-hide-content').each(function(){
-			jQuery(this).attr('checked', true);
-			wpv_show_hide_section_change(jQuery(this));
-		});
-		jQuery('.js-wpv-show-hide-limit-offset').each(function(){
-			jQuery(this).attr('checked', false);
-			wpv_show_hide_section_change(jQuery(this));
-		});
+		hide_sections = Array('limit-offset');
 	} else if ('parametric' == purpose) {
-		jQuery('.js-wpv-show-hide-query-options, .js-wpv-show-hide-limit-offset, .js-wpv-show-hide-content, .js-wpv-show-hide-filter-extra').each(function(){
-			jQuery(this).attr('checked', true);
-			wpv_show_hide_section_change(jQuery(this));
-		});
-		jQuery('.js-wpv-show-hide-pagination').each(function(){
-			jQuery(this).attr('checked', false);
-			wpv_show_hide_section_change(jQuery(this));
-		});
+		hide_sections = Array('pagination');
+	} else if ('bootstrap-grid' == purpose) {
+		hide_sections = Array('layout-extra', 'content');
 	} else if ('full' == purpose) {
-		jQuery('.js-wpv-show-hide-query-options, .js-wpv-show-hide-limit-offset, .js-wpv-show-hide-content, .js-wpv-show-hide-pagination, .js-wpv-show-hide-filter-extra').each(function(){
-			jQuery(this).attr('checked', true);
-			wpv_show_hide_section_change(jQuery(this));
-		});
+	}
+
+	var sections_length = all_sections.length;
+	for (var i = 0; i < sections_length; i++) {
+		var found = false;
+		var hide_length = hide_sections.length;
+		
+		for (j = 0; j < hide_length; j++) {
+			if (all_sections[i] == hide_sections[j]) {
+				found = true;
+			}
+		}
+
+		var item = jQuery('.js-wpv-show-hide-' + all_sections[i]);
+		item.attr('checked', !found);
+		wpv_show_hide_section_change(item);
 	}
 }
 

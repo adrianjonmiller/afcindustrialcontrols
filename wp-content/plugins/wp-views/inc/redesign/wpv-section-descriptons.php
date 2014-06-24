@@ -14,12 +14,12 @@ $views_edit_help =
         'content_section' => 
             array(
                 'title' => htmlentities( __('Content to load', 'wpv-views'), ENT_QUOTES ), 
-                'content' => htmlentities( __('Choose between posts and taxonomy and then select the specific content type to load. You can select a single content type or multiple content types.', 'wpv-views'), ENT_QUOTES )
+                'content' => htmlentities( __('Choose between posts, taxonomy and users and then select the specific content type to load. For posts, you can select multiple content types.', 'wpv-views'), ENT_QUOTES )
             ),
         'query_options' => 
             array(
                 'title' => htmlentities( __('Query options', 'wpv-views'), ENT_QUOTES ), 
-                'content' => htmlentities( __('This section includes additional options for what content to load. You will see different options for posts and taxonomy.', 'wpv-views'), ENT_QUOTES )
+                'content' => htmlentities( __('This section includes additional options for what content to load. You will see different options for posts, taxonomy and users.', 'wpv-views'), ENT_QUOTES )
             ),
         'ordering' => 
             array(
@@ -34,7 +34,7 @@ $views_edit_help =
         'filter_the_results' => 
             array(
                 'title' => htmlentities( __('Query filter', 'wpv-views'), ENT_QUOTES ), 
-                'content' => htmlentities( __("You can filter the View query by status, custom fields, taxonomy and even content search. Click on 'Add another filter' and then select the filter type. A View may have as many filters as you like.", 'wpv-views'), ENT_QUOTES )
+                'content' => htmlentities( __("You can filter the View query by status, custom fields, taxonomy, users fields and even content search depending on the content that you are going to load. Click on 'Add another filter' and then select the filter type. A View may have as many filters as you like.", 'wpv-views'), ENT_QUOTES )
             ),
         'pagination_and_sliders_settings' => 
             array(
@@ -45,6 +45,11 @@ $views_edit_help =
             array(
                 'title' => htmlentities( __('Filter HTML/CSS/JS', 'wpv-views'), ENT_QUOTES ), 
                 'content' => htmlentities( __("In this section you can add pagination controls, slider controls and parametric searches. If you enabled pagination, you need to insert the pagination controls here. They are used for both paged results and sliders. For parametric searches, insert 'filter' elements. The output of this section is displayed via the [wpv-filter-meta-html] shortcode in the Combined Output section.", 'wpv-views'), ENT_QUOTES )
+            ),
+		'parametric_search' => 
+            array(
+                'title' => htmlentities( __('Parametric search', 'wpv-views'), ENT_QUOTES ), 
+                'content' => htmlentities( __("In this section you can choose when to refresh the Views results and which options to show in form inputs.", 'wpv-views'), ENT_QUOTES )
             ),
         'layout_html_css_js' => 
             array(

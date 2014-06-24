@@ -23,7 +23,21 @@
 			      <?php the_content(); ?>
 			      <?php wp_link_pages(array('before' => '<nav class="pagination">', 'after' => '</nav>')); ?>
 		      </section>
-				<?php the_secondary_content(1); ?>
+        <div style="float: left; width: 45%; padding-left: 1em; padding-top: 1em;">
+          <?php
+          $args = array( 'post_type' => 'products', 'order' => 'ASC', 'posts_per_page' => '1');
+          $loop = new WP_Query( $args );
+          while ( $loop->have_posts() ) : $loop->the_post(); ?>
+            <?php if (has_post_thumbnail()) { ?>
+              <div class="thumbnail">
+                <a href="<?php echo get_permalink(); ?>" data-behavior="pageloader" style="float: left">
+                 <?php echo get_the_post_thumbnail($post_id, 'medium'); ?> 
+                </a>
+                <?php the_content(); ?>
+              </div>
+            <?php } ?>
+          <?php endwhile; ?>
+        </div>
 		    <?php roots_post_inside_after(); ?>
 		  <?php roots_post_after(); ?>
 		<?php endwhile; /* End loop */ ?>

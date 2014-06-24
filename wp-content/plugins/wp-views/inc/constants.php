@@ -18,7 +18,10 @@ define('WPV_FILTER_BY_POST_PARENT_LINK', 'http://wp-types.com/documentation/user
 define('WPV_FILTER_BY_SPECIFIC_TEXT_LINK', 'http://wp-types.com/documentation/user-guides/filtering-views-for-a-specific-text-string-search/');
 
 define('WPV_FILTER_BY_POST_ID_LINK', 'http://wp-types.com/documentation/user-guides/filtering-views-query-by-post-id/');
-
+//Filter by users
+define('WPV_FILTER_BY_USERS_LINK', 'http://wp-types.com/documentation/user-guides/filtering-views-query-by-author/');
+//Filter by usermeta
+define('WPV_FILTER_BY_USER_FIELDS_LINK', 'http://wp-types.com/documentation/user-guides/filtering-views-by-custom-fields/');
 
 
 // Views layout constants.

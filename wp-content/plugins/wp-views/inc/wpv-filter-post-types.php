@@ -1,17 +1,7 @@
 <?php
 
-function wpv_post_default_settings($view_settings) {
 
-    if (!isset($view_settings['post_type'])) {
-        $view_settings['post_type'] = array();
-    }
-    if (!isset($view_settings['post_type_dont_include_current_page'])) {
-        $view_settings['post_type_dont_include_current_page'] = true;
-    }
-
-    return $view_settings;
-}
-
+// I think that DEPRECATED: there is no wpv_view_settings_save action anymore
 add_filter('wpv_view_settings_save', 'wpv_post_types_defaults_save', 10, 1);
 function wpv_post_types_defaults_save($view_settings) {
 
@@ -22,6 +12,9 @@ function wpv_post_types_defaults_save($view_settings) {
 
     return $view_settings;
 }
+
+// DEPRECATED
+// Only used in the old wpv-filter-types.php file
 
 function wpv_get_post_filter_summary($view_settings) {
 
@@ -74,6 +67,9 @@ function wpv_get_post_filter_summary($view_settings) {
 
 }
 
+// DEPRECATED
+// Only used in the old wpv-filter-types.php file
+
 function wpv_post_types_checkboxes($view_settings) {
     $post_types = get_post_types(array('public'=>true), 'objects');
 
@@ -96,6 +92,9 @@ function wpv_post_types_checkboxes($view_settings) {
     <?php
 }
 
+// DEPRECATED
+// Only used in the old wpv-filter-types.php file
+
 function wpv_post_types_settings($view_settings) {
 
     ?>
@@ -107,14 +106,16 @@ function wpv_post_types_settings($view_settings) {
     <?php
 }
 
-add_filter('wpv-view-get-content-summary', 'wpv_post_types_summary_filter', 5, 3);
+// DEPRECATED
+// Added filter in the redesign/ folder
+
+// add_filter('wpv-view-get-content-summary', 'wpv_post_types_summary_filter', 5, 3);
 
 function wpv_post_types_summary_filter($summary, $post_id, $view_settings) {
-	if(!isset($view_settings['query_type']) || (isset($view_settings['query_type']) && $view_settings['query_type'][0] == 'posts')) {
+	if ( !isset( $view_settings['query_type'] ) || ( isset($view_settings['query_type'] ) && $view_settings['query_type'][0] == 'posts' ) ) {
 		ob_start();
-		wpv_get_post_filter_summary($view_settings);
+		wpv_get_post_filter_summary( $view_settings );
 		$summary .= ob_get_contents();
-		ob_end_clean();
 	}
 
 	return $summary;

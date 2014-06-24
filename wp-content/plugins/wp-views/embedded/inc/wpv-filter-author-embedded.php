@@ -29,6 +29,13 @@ function wpv_filter_post_author($query, $view_settings) {
 				$show_author_array[] = $view_settings['author_id']; // set the array to only the selected user ID
 			}
 		}
+		
+		if ($view_settings['author_mode'][0] == 'parent_view') {
+			$parent_user_id = $WP_Views->get_parent_view_user();
+			if ( $parent_user_id ) {
+				$show_author_array[] = $parent_user_id;
+			}
+		}
         
 		if ($view_settings['author_mode'][0] == 'by_url') {
 			if (isset($view_settings['author_url']) && '' != $view_settings['author_url']) {
