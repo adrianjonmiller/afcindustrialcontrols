@@ -6,8 +6,6 @@
         <?php roots_loop_before(); ?>
 			<?php /* Start loop */ ?>
 			<?php while (have_posts()) : the_post(); ?>
-			<h2 class="page-title"><?php the_title(); ?></h2>
-			<?php echo do_shortcode('[gallery size=medium link=file columns=4]'); ?>
 			<?php the_content(); ?>
 			<?php the_product_footer(); ?>
 			<?php endwhile; /* End loop */ ?>
